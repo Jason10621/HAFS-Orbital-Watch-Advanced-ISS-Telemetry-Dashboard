@@ -1,293 +1,93 @@
 /* =========================================
-   HAFS 3D Orbital Watch - Pro Style Guide
-   (Light/Dark Theme Supported)
+   HAFS 3D Orbital Watch - Ultimate Style
    ========================================= */
-
 :root {
-    /* [기본: 밝은 모드] - HAFS 네이비를 글자와 포인트로 사용 */
     --color-bg-main: #f0f4f8;      
     --color-panel-bg: #ffffff;     
-    --color-text-primary: #0a192f; /* HAFS 짙은 네이비 */
+    --color-text-primary: #0a192f; 
     --color-text-secondary: #495670;
-    --color-accent-gold: #b6942c;  /* 가독성을 위해 살짝 짙어진 골드 */
+    --color-accent-gold: #b6942c;  
     --color-status-green: #059669;
-    
-    --font-heading: 'Playfair Display', serif; /* HAFS 전통의 Serif */
-    --font-data: 'Roboto Mono', monospace;     /* 엔지니어링의 Mono */
+    --font-heading: 'Playfair Display', serif; 
+    --font-data: 'Roboto Mono', monospace;     
     --border-style: 1px solid rgba(10, 25, 47, 0.1);
 }
 
-/* [추가: 어두운 모드] - body에 이 클래스가 붙으면 색상이 반전됨 */
 body.dark-mode {
-    --color-bg-main: #0a192f;
-    --color-panel-bg: #112240;
-    --color-text-primary: #e6f1ff;
-    --color-text-secondary: #8892b0;
-    --color-accent-gold: #d4af37;
-    --color-status-green: #64ffda; /* 사이버틱한 그린 */
-    --border-style: 1px solid rgba(212, 175, 55, 0.2);
+    --color-bg-main: #060d1a; /* 더 깊은 심우주 색상 */
+    --color-panel-bg: #0d1b2a;
+    --color-text-primary: #e0e1dd;
+    --color-text-secondary: #778da9;
+    --color-accent-gold: #e5a93d;
+    --color-status-green: #00ffcc; 
+    --border-style: 1px solid rgba(229, 169, 61, 0.2);
 }
 
-* { 
-    margin: 0; 
-    padding: 0; 
-    box-sizing: border-box; 
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background-color: var(--color-bg-main); color: var(--color-text-primary); font-family: 'Roboto', sans-serif; transition: 0.4s; overflow-x: hidden; }
 
-body {
-    background-color: var(--color-bg-main);
-    color: var(--color-text-primary);
-    font-family: 'Roboto', sans-serif;
-    line-height: 1.6;
-    overflow-x: hidden;
-    transition: background-color 0.4s ease, color 0.4s ease; /* 부드러운 테마 전환 */
-}
+header { background-color: var(--color-panel-bg); padding: 15px 40px; border-bottom: 2px solid var(--color-accent-gold); display: flex; justify-content: center; }
+.header-container { width: 95%; display: flex; justify-content: space-between; align-items: center; }
+.hafs-logo { font-family: var(--font-heading); font-size: 32px; color: var(--color-accent-gold); border: 2px solid var(--color-accent-gold); padding: 5px 15px; }
+.title-group h1 { font-family: var(--font-heading); font-size: 24px; color: var(--color-text-primary); letter-spacing: 1px; }
+.title-group p { font-size: 14px; color: var(--color-text-secondary); }
 
-/* --- Header & Typography --- */
-header {
-    background-color: var(--color-panel-bg);
-    padding: 15px 40px;
-    border-bottom: 2px solid var(--color-accent-gold); 
-    display: flex;
-    justify-content: center;
-    transition: background-color 0.4s ease;
-}
+.target-selector { display: flex; flex-direction: column; align-items: center; background-color: var(--color-bg-main); padding: 10px 15px; border-radius: 4px; border: var(--border-style); }
+.target-selector label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 5px; }
+#sat-select { background-color: var(--color-panel-bg); color: var(--color-accent-gold); border: 1px solid var(--color-accent-gold); padding: 5px; font-family: var(--font-data); font-weight: bold; border-radius: 4px; outline: none; cursor: pointer; }
 
-.header-container {
-    width: 95%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+.system-status { font-family: var(--font-data); font-size: 14px; text-align: right; }
+.theme-btn { background: none; border: 1px solid var(--color-accent-gold); color: var(--color-accent-gold); padding: 5px 10px; font-family: var(--font-data); cursor: pointer; border-radius: 4px; transition: 0.3s; margin-bottom: 5px;}
+.theme-btn:hover { background-color: var(--color-accent-gold); color: var(--color-panel-bg); }
+.status-dot { display: inline-block; width: 10px; height: 10px; background-color: var(--color-status-green); border-radius: 50%; box-shadow: 0 0 10px var(--color-status-green); }
+#sat-name-display { font-weight: bold; color: var(--color-status-green); }
+#last-update { font-size: 12px; color: var(--color-text-secondary); margin-top: 5px; }
 
-.hafs-logo {
-    font-family: var(--font-heading);
-    font-size: 32px;
-    color: var(--color-accent-gold);
-    border: 2px solid var(--color-accent-gold);
-    padding: 5px 15px;
-}
-
-.title-group h1 { 
-    font-family: var(--font-heading); 
-    font-size: 24px; 
-    color: var(--color-text-primary); 
-    letter-spacing: 1px;
-}
-.title-group p { 
-    font-size: 14px; 
-    color: var(--color-text-secondary); 
-}
-
-/* --- 위성 선택기 (Target Selector) --- */
-.target-selector {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: var(--color-bg-main);
-    padding: 10px 15px;
-    border-radius: 4px;
-    border: var(--border-style);
-    transition: 0.4s ease;
-}
-
-.target-selector label {
-    font-size: 11px;
-    color: var(--color-text-secondary);
-    letter-spacing: 1px;
-    margin-bottom: 5px;
-}
-
-#sat-select {
-    background-color: var(--color-panel-bg);
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-accent-gold);
-    padding: 5px;
-    font-family: var(--font-data);
-    font-weight: bold;
-    border-radius: 4px;
-    outline: none;
-    cursor: pointer;
-    transition: 0.4s ease;
-}
-
-/* --- System Status & Theme Toggle --- */
-.system-status { 
-    font-family: var(--font-data); 
-    font-size: 14px; 
-    text-align: right; 
-}
-
-.theme-btn {
-    background: none;
-    border: 1px solid var(--color-accent-gold);
-    color: var(--color-accent-gold);
-    padding: 5px 10px;
-    font-family: var(--font-data);
-    cursor: pointer;
-    border-radius: 4px;
-    margin-bottom: 5px;
-    transition: 0.3s;
-}
-
-.theme-btn:hover { 
-    background-color: var(--color-accent-gold); 
-    color: var(--color-panel-bg); 
-}
-
-.status-dot {
-    display: inline-block; 
-    width: 10px; 
-    height: 10px;
-    background-color: var(--color-status-green);
-    border-radius: 50%; 
-    margin-right: 5px;
-    box-shadow: 0 0 10px var(--color-status-green);
-}
-
-#sat-name-display {
-    font-weight: bold;
-    color: var(--color-status-green);
-}
-
-#last-update { 
-    font-size: 12px; 
-    color: var(--color-text-secondary); 
-    margin-top: 5px; 
-}
-
-/* --- Dashboard Grid Layout (핵심 레이아웃) --- */
+/* Grid 구조 개편 (세로로 더 길게) */
 .dashboard-grid {
-    display: grid; 
-    width: 95%; 
-    margin: 30px auto; 
-    gap: 20px;
+    display: grid; width: 95%; margin: 30px auto; gap: 20px;
     grid-template-areas: 
         "map map tele"
-        "map map hafs";
+        "map map hafs"
+        "live live set";
     grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: auto auto; /* 3D 공간 확보를 위해 아래쪽 패널을 줄임 */
+    grid-template-rows: auto auto 300px;
 }
 
-/* --- Panel Common Styling --- */
-.panel {
-    background-color: var(--color-panel-bg);
-    border: var(--border-style);
-    border-radius: 4px; 
-    padding: 20px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    transition: 0.4s ease;
-}
-body.dark-mode .panel { 
-    box-shadow: 0 10px 30px -15px rgba(2,12,27,0.7); 
-}
+.panel { background-color: var(--color-panel-bg); border: var(--border-style); border-radius: 4px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.4s; }
+body.dark-mode .panel { box-shadow: 0 10px 30px -15px rgba(0,0,0,0.8); }
+.panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(136, 146, 176, 0.2); padding-bottom: 10px; margin-bottom: 20px; }
+.panel-header h2 { font-family: var(--font-heading); font-size: 18px; color: var(--color-accent-gold); }
+.mono-data { font-family: var(--font-data); font-weight: bold; color: var(--color-accent-gold); }
 
-.panel:hover { 
-    border: 1px solid var(--color-accent-gold); 
-    transform: translateY(-3px); 
-}
+.map-panel { grid-area: map; height: 650px; display: flex; flex-direction: column; padding: 10px; }
+.map-container { flex-grow: 1; border-radius: 4px; overflow: hidden; }
 
-.panel-header {
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center;
-    border-bottom: 1px solid rgba(136, 146, 176, 0.2);
-    padding-bottom: 10px; 
-    margin-bottom: 20px;
-}
-.panel-header h2 { 
-    font-family: var(--font-heading); 
-    font-size: 18px; 
-    color: var(--color-accent-gold); 
-}
-
-.mono-data { 
-    font-family: var(--font-data); 
-    font-weight: bold; 
-    color: var(--color-accent-gold); 
-}
-
-/* --- 3D Map Panel --- */
-.map-panel { 
-    grid-area: map; 
-    height: 600px; 
-    display: flex; 
-    flex-direction: column; 
-}
-
-.map-container { 
-    flex-grow: 1; 
-    border-radius: 4px; 
-    border: var(--border-style); 
-    z-index: 1; 
-}
-
-/* 3D 캔버스 컨테이너의 잔여 여백 제거 및 꽉 채우기 */
-#globeViz {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    border-radius: 4px;
-}
-
-/* --- Telemetry & HAFS Panels --- */
 .telemetry-panel { grid-area: tele; }
 .hafs-panel { grid-area: hafs; }
+.live-panel { grid-area: live; padding: 10px;}
+.settings-panel { grid-area: set; }
 
-.data-grid { 
-    display: grid; 
-    grid-template-columns: 1fr 1fr; 
-    gap: 15px; 
-}
+.data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.data-card { background-color: var(--color-bg-main); padding: 15px; border-radius: 4px; }
+.data-card label { display: block; font-size: 12px; color: var(--color-text-secondary); margin-bottom: 5px; }
+.data-card span { font-size: 18px; }
 
-.data-card { 
-    background-color: var(--color-bg-main); 
-    padding: 15px; 
-    border-radius: 4px; 
-    transition: 0.4s ease;
-}
-.data-card label { 
-    display: block; 
-    font-size: 12px; 
-    color: var(--color-text-secondary); 
-    margin-bottom: 5px; 
-}
-.data-card span { 
-    font-size: 18px; 
-}
+.special-data-card { background-color: rgba(212, 175, 55, 0.1); border: 1px solid var(--color-accent-gold); padding: 20px; border-radius: 4px; }
+.special-text { font-size: 28px; }
 
-#unit-toggle {
-    background: none; 
-    border: 1px solid var(--color-accent-gold);
-    color: var(--color-accent-gold); 
-    padding: 5px 10px; 
-    font-size: 12px; 
-    cursor: pointer; 
-    transition: 0.2s;
-    border-radius: 4px;
-}
-#unit-toggle:hover { 
-    background-color: var(--color-accent-gold); 
-    color: var(--color-panel-bg); 
-}
+.iframe-container { width: 100%; height: 100%; border-radius: 4px; overflow: hidden;}
+.iframe-container iframe { width: 100%; height: 100%; border: none; }
 
-.special-data-card {
-    background-color: rgba(212, 175, 55, 0.1); /* 골드 톤 배경 */
-    border: 1px solid var(--color-accent-gold);
-    padding: 20px; 
-    border-radius: 4px; 
-    margin-bottom: 15px;
+/* 신규: 시각적 설정 체크박스 리스트 */
+.toggle-list { display: flex; flex-direction: column; gap: 15px; }
+.toggle-row { display: flex; align-items: center; cursor: pointer; }
+.toggle-row input[type="checkbox"] { 
+    appearance: none; width: 40px; height: 20px; background: var(--color-bg-main); border: 1px solid var(--color-text-secondary); border-radius: 20px; position: relative; cursor: pointer; outline: none; transition: 0.3s; margin-right: 10px;
 }
-.special-text { 
-    font-size: 28px; 
+.toggle-row input[type="checkbox"]::after {
+    content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: var(--color-text-secondary); border-radius: 50%; transition: 0.3s;
 }
-
-/* --- Footer --- */
-footer { 
-    text-align: center; 
-    padding: 20px; 
-    font-size: 12px; 
-    color: var(--color-text-secondary); 
-    border-top: var(--border-style); 
-    margin-top: 20px;
-}
+.toggle-row input[type="checkbox"]:checked { background: var(--color-status-green); border-color: var(--color-status-green); }
+.toggle-row input[type="checkbox"]:checked::after { background: #fff; left: 22px; }
+.toggle-label { font-size: 14px; font-family: var(--font-data); color: var(--color-text-primary); }

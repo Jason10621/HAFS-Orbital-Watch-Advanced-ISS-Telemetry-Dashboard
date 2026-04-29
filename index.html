@@ -3,30 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAFS 3D Orbital Watch (Full-Stack)</title>
+    <title>HAFS 3D Orbital Watch: Ultimate</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    
     <script src="https://unpkg.com/three"></script>
     <script src="https://unpkg.com/globe.gl"></script>
 </head>
 <body>
-    
     <header>
         <div class="header-container">
             <div class="hafs-logo">HAFS</div>
             <div class="title-group">
-                <h1>3D ORBITAL WATCH</h1>
-                <p>Advanced Real-Time Telemetry & SGP4 Propagator</p>
+                <h1>ORBITAL WATCH V2.0</h1>
+                <p>Global Telemetry & SGP4 Propagator</p>
             </div>
             
             <div class="target-selector">
-                <label for="sat-select">TARGET SATELLITE:</label>
+                <label for="sat-select">TARGET SATELLITE</label>
                 <select id="sat-select">
-                    <option value="iss">ISS (International Space Station)</option>
-                    <option value="hubble">HST (Hubble Space Telescope)</option>
-                    <option value="tiangong">CSS (Tiangong Space Station)</option>
-                    <option value="aqua">AQUA (Earth Observation)</option>
+                    <option value="iss">ISS (국제 우주 정거장)</option>
+                    <option value="hubble">HST (허블 망원경)</option>
+                    <option value="tiangong">CSS (중국 톈궁)</option>
+                    <option value="kompsat2">KOMPSAT-2 (아리랑 2호)</option>
+                    <option value="kompsat3">KOMPSAT-3 (아리랑 3호)</option>
+                    <option value="kompsat5">KOMPSAT-5 (아리랑 5호)</option>
+                    <option value="starlink">STARLINK (SpaceX 통신)</option>
+                    <option value="goes16">GOES-16 (정지궤도 기상)</option>
+                    <option value="noaa19">NOAA-19 (극궤도 기상)</option>
+                    <option value="aqua">AQUA (지구 관측)</option>
                 </select>
             </div>
 
@@ -34,57 +38,72 @@
                 <button id="theme-toggle" class="theme-btn">🌙 Dark Mode</button>
                 <br>
                 <span class="status-dot"></span> <span id="sat-name-display">SYSTEM LIVE</span>
-                <div id="last-update">Last Update: --:--:--</div>
+                <div id="last-update">Update: --:--:--</div>
             </div>
         </div>
     </header>
 
     <main class="dashboard-grid">
-        
         <section class="panel map-panel">
-            <div class="panel-header">
-                <h2>O1. 3D ORBITAL TRACKER (WebGL)</h2>
-            </div>
+            <div class="panel-header"><h2>O1. 3D ORBITAL TRACKER (WebGL)</h2></div>
             <div id="globeViz" class="map-container"></div> 
         </section>
 
         <section class="panel telemetry-panel">
             <div class="panel-header">
                 <h2>O2. CORE TELEMETRY</h2>
-                <button id="unit-toggle">Metric (km/h)</button>
+                <button id="unit-toggle" class="theme-btn">Metric (km)</button>
             </div>
             <div class="data-grid">
-                <div class="data-card">
-                    <label>LATITUDE</label>
-                    <span id="lat-val" class="mono-data">--.----°</span>
-                </div>
-                <div class="data-card">
-                    <label>LONGITUDE</label>
-                    <span id="lon-val" class="mono-data">--.----°</span>
-                </div>
-                <div class="data-card">
-                    <label>ALTITUDE</label>
-                    <span id="alt-val" class="mono-data">--.-- km</span>
-                </div>
-                <div class="data-card">
-                    <label>VELOCITY</label>
-                    <span id="vel-val" class="mono-data">--,--- km/h</span>
-                </div>
+                <div class="data-card"><label>LATITUDE</label><span id="lat-val" class="mono-data">--.--°</span></div>
+                <div class="data-card"><label>LONGITUDE</label><span id="lon-val" class="mono-data">--.--°</span></div>
+                <div class="data-card"><label>ALTITUDE</label><span id="alt-val" class="mono-data">-- km</span></div>
+                <div class="data-card"><label>VELOCITY</label><span id="vel-val" class="mono-data">-- km/h</span></div>
             </div>
         </section>
 
         <section class="panel hafs-panel">
-            <div class="panel-header">
-                <h2>O3. THE HAFS POINT</h2>
-            </div>
+            <div class="panel-header"><h2>O3. THE HAFS POINT</h2></div>
             <div class="data-vertical">
                 <div class="special-data-card">
                     <label>3D SPATIAL DISTANCE FROM HAFS</label>
-                    <span id="dist-hafs" class="mono-data special-text">--,---.-- km</span>
+                    <span id="dist-hafs" class="mono-data special-text">--,--- km</span>
                 </div>
             </div>
         </section>
 
+        <section class="panel live-panel">
+            <div class="panel-header"><h2>O4. NASA LIVE STREAM</h2></div>
+            <div class="iframe-container">
+                <iframe src="https://www.youtube.com/embed/live_stream?channel=UCLA_DiR1FfKNvjuUpBHmylQ&autoplay=1&mute=1" frameborder="0" allowfullscreen></iframe>
+            </div>
+        </section>
+
+        <section class="panel settings-panel">
+            <div class="panel-header"><h2>O5. VISUAL CONTROLS</h2></div>
+            <div class="toggle-list">
+                <label class="toggle-row">
+                    <input type="checkbox" id="opt-autotrack" checked>
+                    <span class="toggle-label">Camera Auto-Track (자동 추적)</span>
+                </label>
+                <label class="toggle-row">
+                    <input type="checkbox" id="opt-trail" checked>
+                    <span class="toggle-label">Show Orbit Trail (궤적선 표시)</span>
+                </label>
+                <label class="toggle-row">
+                    <input type="checkbox" id="opt-atmosphere" checked>
+                    <span class="toggle-label">Atmosphere Glow (대기권 발광)</span>
+                </label>
+                <label class="toggle-row">
+                    <input type="checkbox" id="opt-stars" checked>
+                    <span class="toggle-label">Deep Space Background (별빛)</span>
+                </label>
+                <label class="toggle-row">
+                    <input type="checkbox" id="opt-nightmap">
+                    <span class="toggle-label">Night City Lights (야간 지도)</span>
+                </label>
+            </div>
+        </section>
     </main>
     <script src="script.js"></script>
 </body>
