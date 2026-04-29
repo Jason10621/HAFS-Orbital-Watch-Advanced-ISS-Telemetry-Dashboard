@@ -1,20 +1,18 @@
-/* =========================================
-   HAFS Orbital Engine - Advanced Logic
-   ========================================= */
+// =======================================================================
+// HAFS Orbital Watch - 3D Frontend & Backend Communication
+// =======================================================================
 
-// --- Constants & Configuration ---
-// HAFS 정체성의 핵심: 용인외대부고 정밀 좌표
 const HAFS_COORDS = { lat: 37.3323, lon: 127.2415 };
-const API_ISS_NOW = 'https://api.wheretheiss.at/v1/satellites/25544';
-const API_CREW = 'http://api.open-notify.org/astros.json';
-const UPDATE_INTERVAL_MS = 5000; // 5초마다 데이터 업데이트
+const BACKEND_URL = 'http://localhost:3000/api/telemetry/'; // 내가 만든 서버 주소
+const UPDATE_INTERVAL_MS = 3000; // 3초마다 부드럽게 업데이트
 
-// --- State Variables (애플리케이션 상태 관리) ---
-let map, issMarker, orbitLine;
-let isMetric = true; // Metric(km) vs Imperial(mile) 토글 상태
-let pastPath = []; // 과거 궤적 저장 배열
+// --- 상태 변수 ---
+let world; // 3D 지구본 객체
+let isMetric = true;
+let currentSatId = 'iss';
+let trajectoryData = []; // 3D 궤적을 그리기 위한 배열
 
-// --- DOM Elements ---
+// --- DOM 요소 ---
 const el = {
     lat: document.getElementById('lat-val'),
     lon: document.getElementById('lon-val'),
@@ -22,120 +20,113 @@ const el = {
     vel: document.getElementById('vel-val'),
     distHafs: document.getElementById('dist-hafs'),
     lastUpdate: document.getElementById('last-update'),
+    satName: document.getElementById('sat-name-display'),
+    satSelect: document.getElementById('sat-select'),
     unitToggle: document.getElementById('unit-toggle'),
-    crewList: document.getElementById('crew-list'),
-    crewCount: document.getElementById('crew-count'),
-    nextPass: document.getElementById('next-pass')
+    themeToggle: document.getElementById('theme-toggle')
 };
 
-// ================= [ 1. 초기화 및 지도 설정 ] =================
-
-function initDashboard() {
-    console.log("HAFS Orbital Watch Engine Initializing...");
+// ================= [ 1. 3D 지구본(Globe.gl) 초기화 ] =================
+function initGlobe() {
+    console.log("Initializing 3D Globe...");
     
-    // Leaflet 지도 초기화: HAFS 감성에 맞게 어두운 톤의 타일 사용
-    map = L.map('issMap', {
-        center: [0, 0],
-        zoom: 2,
-        minZoom: 1
-    });
-
-    // CartoDB Dark Matter 타일 (다크모드 관제 센터 감성)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; CartoDB &copy; OpenStreetMap'
-    }).addTo(map);
-
-    // ISS 커스텀 아이콘 설정 (직접 만든 이미지로 대체 가능)
-    const issIcon = L.icon({
-        iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/d/d0/International_Space_Station.svg',
-        iconSize: [40, 25],
-        iconAnchor: [20, 12]
-    });
-
-    // ISS 마커를 지도에 추가
-    issMarker = L.marker([0, 0], { icon: issIcon }).addTo(map);
-    
-    // HAFS 위치에 학구적인 골드 엠블럼 마커 추가
-    const hafsIcon = L.divIcon({className: 'hafs-marker-gold'}); // CSS에서 스타일 정의 필요
-    L.marker([HAFS_COORDS.lat, HAFS_COORDS.lon], {icon: hafsIcon}).addTo(map)
-        .bindPopup("HAFS (Hankuk Academy of Foreign Studies)");
-
-    // 과거 궤적을 그릴 선 설정
-    orbitLine = L.polyline([], { color: '#d4af37', weight: 1, opacity: 0.5 }).addTo(map);
+    // Globe 객체 생성 및 HTML 요소에 부착
+    world = Globe()(document.getElementById('globeViz'))
+        .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg') // 밝은 테마 기본 맵
+        .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+        .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+        .pointOfView({ lat: HAFS_COORDS.lat, lng: HAFS_COORDS.lon, altitude: 2.5 }) // 시작 시점을 HAFS로
+        
+        // HAFS 위치에 금색 기둥(Ring/Point) 표시
+        .ringsData([{ lat: HAFS_COORDS.lat, lng: HAFS_COORDS.lon }])
+        .ringColor(() => '#d4af37')
+        .ringMaxRadius(2)
+        .ringPropagationSpeed(1)
+        .ringRepeatPeriod(1000);
 
     // 이벤트 리스너 등록
     el.unitToggle.addEventListener('click', toggleUnits);
+    el.themeToggle.addEventListener('click', toggleTheme);
+    el.satSelect.addEventListener('change', (e) => {
+        currentSatId = e.target.value;
+        trajectoryData = []; // 위성이 바뀌면 궤적 초기화
+        fetchSatelliteData(); // 즉시 새 위성 정보 불러오기
+    });
 
-    // 최초 데이터 패치 및 주기적 루프 시작
-    fetchIssData();
-    fetchCrewData();
-    fetchHafsPassPrediction();
-    setInterval(fetchIssData, UPDATE_INTERVAL_MS);
+    // 메인 루프 시작
+    fetchSatelliteData();
+    setInterval(fetchSatelliteData, UPDATE_INTERVAL_MS);
 }
 
-// ================= [ 2. 핵심 텔레메트리 데이터 페칭 ] =================
-
-// async/await를 활용한 현대적인 비동기 통신 및 예외 처리
-async function fetchIssData() {
+// ================= [ 2. 백엔드 통신 및 데이터 처리 ] =================
+async function fetchSatelliteData() {
     try {
-        const response = await fetch(API_ISS_NOW);
-        if (!response.ok) throw new Error(`Network error: ${response.status}`);
+        // 내가 만든 Node.js 서버에 데이터 요청
+        const response = await fetch(BACKEND_URL + currentSatId);
+        if (!response.ok) throw new Error("Backend Server Error");
         const data = await response.json();
 
-        // 상태 업데이트
         updateTelemetryDom(data);
-        updateMap(data.latitude, data.longitude);
+        update3DGlobe(data);
         
-        // HAFS와의 직선거리 계산 (공학적 핵심)
-        const dist = calculateHaversineDistance(
-            HAFS_COORDS.lat, HAFS_COORDS.lon,
-            data.latitude, data.longitude
-        );
-        updateHafsSpecialData(dist);
-
-        // 마지막 업데이트 시각 표시
-        el.lastUpdate.textContent = `Last Update: ${new Date().toLocaleTimeString()}`;
+        // 3D 공간 상의 유클리드 거리 및 표면 거리 복합 계산
+        const dist = calculateHaversineDistance(HAFS_COORDS.lat, HAFS_COORDS.lon, data.latitude, data.longitude);
+        updateHafsSpecialData(dist, data.altitude);
 
     } catch (error) {
-        console.error("Failed to fetch ISS data:", error);
-        el.lat.textContent = "Error";
+        console.error("Connection to backend failed. Is server.js running?", error);
+        el.satName.textContent = "SERVER OFFLINE";
+        el.satName.style.color = "red";
     }
 }
 
-// ================= [ 3. 공학적 문제 해결: 구면 기하학 공식 ] =================
+// ================= [ 3. 3D 시각화 업데이트 ] =================
+function update3DGlobe(data) {
+    // Globe.gl은 고도를 지구 반경(1.0)에 대한 비율로 계산합니다. (지구 반경 약 6371km)
+    const normalizedAlt = data.altitude / 6371;
 
-/**
- * 하버사인 공식 (Haversine Formula)
- * 지구를 구체로 가정하고 두 좌표 사이의 최단 거리(대권 거리)를 구하는 수학 공식.
- * 고등학교 수준의 삼각함수와 라디안 개념을 실제 코드로 구현한 부분.
- */
-function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // 지구 평균 반지름 (km)
-    
-    // 도(degree)를 라디안(radian)으로 변환
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    
-    // 공식의 핵심 기하학 연산
-    const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-    
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const distance = R * c; // 최종 거리 (km)
-    
-    return distance;
+    // 현재 위성 위치를 배열로 만듦 (Globe.gl은 배열 데이터를 받음)
+    const satData = [{
+        lat: data.latitude,
+        lng: data.longitude,
+        alt: normalizedAlt,
+        name: data.name
+    }];
+
+    // 궤적(Path) 데이터 추가
+    trajectoryData.push([data.latitude, data.longitude, normalizedAlt]);
+    if (trajectoryData.length > 200) trajectoryData.shift(); // 메모리 관리
+
+    // 1. 위성 본체 그리기 (사이버틱한 민트/골드 색상 점)
+    world.customLayerData(satData)
+         .customThreeObject(d => new THREE.Mesh(
+            new THREE.SphereGeometry(0.5, 16, 16),
+            new THREE.MeshBasicMaterial({ color: 0x64ffda })
+         ))
+         .customThreeObjectUpdate((obj, d) => {
+             Object.assign(obj.position, world.getCoords(d.lat, d.lng, d.alt));
+         });
+
+    // 2. 궤적 선 그리기
+    const pathData = [{ path: trajectoryData }];
+    world.pathsData(pathData)
+         .pathColor(() => 'rgba(212, 175, 55, 0.8)') // HAFS 골드
+         .pathPointAlt(p => p[2])
+         .pathStroke(2);
 }
 
-// ================= [ 4. UI 및 지도 업데이트 로직 ] =================
-
+// ================= [ 4. 데이터 표출 및 테마 로직 ] =================
 function updateTelemetryDom(data) {
-    // 위경도는 항상 Metric 고정
-    el.lat.textContent = `${data.latitude.toFixed(4)}° N`;
-    el.lon.textContent = `${data.longitude.toFixed(4)}° E`;
+    el.satName.textContent = data.name;
+    el.satName.style.color = "var(--color-status-green)";
+    el.lastUpdate.textContent = `Update: ${new Date(data.timestamp).toLocaleTimeString()}`;
 
-    // 단위 변환 로직 (정교한 삼항 연산자 사용)
-    const factor = isMetric ? 1 : 0.621371; // km to mile 변환 계수
+    const latDir = data.latitude >= 0 ? 'N' : 'S';
+    const lonDir = data.longitude >= 0 ? 'E' : 'W';
+    el.lat.textContent = `${Math.abs(data.latitude).toFixed(4)}° ${latDir}`;
+    el.lon.textContent = `${Math.abs(data.longitude).toFixed(4)}° ${lonDir}`;
+
+    const factor = isMetric ? 1 : 0.621371;
     const unitDist = isMetric ? 'km' : 'mi';
     const unitVel = isMetric ? 'km/h' : 'mph';
 
@@ -143,101 +134,41 @@ function updateTelemetryDom(data) {
     el.vel.textContent = `${(data.velocity * factor).toFixed(0).toLocaleString()} ${unitVel}`;
 }
 
-function updateHafsSpecialData(dist) {
+function updateHafsSpecialData(surfaceDist, altitude) {
+    // 피타고라스 정리를 응용하여 3D 직선거리(Line of sight) 근사치 계산
+    const dist3D = Math.sqrt(Math.pow(surfaceDist, 2) + Math.pow(altitude, 2));
     const factor = isMetric ? 1 : 0.621371;
     const unit = isMetric ? 'km' : 'mi';
-    
-    // 거리 계산 결과 반영
-    el.distHafs.textContent = `${(dist * factor).toFixed(2).toLocaleString()} ${unit}`;
+    el.distHafs.textContent = `${(dist3D * factor).toFixed(2).toLocaleString()} ${unit}`;
 }
 
-function updateMap(lat, lon) {
-    const newPos = [lat, lon];
-    issMarker.setLatLng(newPos);
-    
-    // 지도 중심을 ISS로 이동시키되 부드럽게(Pan) 이동
-    map.panTo(newPos, {animate: true, duration: 0.5});
-
-    // 과거 궤적 추가 및 지도에 다시 그리기
-    pastPath.push(newPos);
-    
-    // 최적화: 궤적선이 너무 많아지면 성능 하락하므로 최근 500개만 유지
-    if (pastPath.length > 500) pastPath.shift();
-    
-    orbitLine.setLatLngs(pastPath);
+// 하버사인 공식 (지표면 곡면 거리)
+function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; 
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-// 단위 변환 토글 함수
 function toggleUnits() {
     isMetric = !isMetric;
     el.unitToggle.textContent = isMetric ? "Metric (km/h)" : "Imperial (mph)";
-    // 토글 즉시 화면 업데이트를 강제하기 위해 API를 다시 호출하지 않고 DOM만 수정 가능
-    // 여기서는 간단하게 다음 API 호출 루프를 기다림
 }
 
-// ================= [ 5. 우주비행사 데이터 및 패널 동적 생성 ] =================
-
-async function fetchCrewData() {
-    try {
-        const response = await fetch(API_CREW);
-        if (!response.ok) throw new Error("Crew network error");
-        const data = await response.json();
-
-        // 필터링: ISS에 탑승한 인원만 추출
-        const issCrew = data.people.filter(p => p.craft === 'ISS');
-        
-        el.crewCount.textContent = `${issCrew.length} People Onboard`;
-        el.crewList.innerHTML = ''; // 로딩 메시지 삭제
-
-        // 탑승자별 카드 dynamic 생성 및 DOM 삽입 (고급 DOM 조작)
-        issCrew.forEach(member => {
-            const card = document.createElement('div');
-            card.className = 'crew-card';
-            
-            // 국적 및 사진 정보는 API에 없으므로, 이름 기반 더미 이미지 사용 (실제 사진 API로 대체 권장)
-            const photoUrl = `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${member.name}`;
-            
-            card.innerHTML = `
-                <img src="${photoUrl}" alt="${member.name}" class="crew-photo">
-                <div class="crew-info">
-                    <h4>${member.name}</h4>
-                    <p>International Space Station (ISS)</p>
-                </div>
-            `;
-            el.crewList.appendChild(card);
-        });
-
-    } catch (error) {
-        console.error("Crew data fetch failed:", error);
-        el.crewList.innerHTML = '<p class="error-text">Failed to load crew data.</p>';
+function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    el.themeToggle.textContent = isDark ? "☀️ Light Mode" : "🌙 Dark Mode";
+    
+    // 테마에 따라 3D 지구본 텍스처 변경 (핵심 시각 효과)
+    if (isDark) {
+        world.globeImageUrl('https://unpkg.com/three-globe/example/img/earth-dark.jpg');
+    } else {
+        world.globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
     }
 }
 
-// ================= [ 6. 고급 기능: HAFS 상공 통과 시간 예측 ] =================
-
-async function fetchHafsPassPrediction() {
-    // 주의: 실제 정확한 패스 예측을 위해서는 TLE 데이터를 계산해야 하므로 고도의 기하학 지식이 필요함.
-    // 여기서는 간단한 테스트용 외부 API를 활용 (주의: API가 불안정할 수 있음)
-    // 실제 포트폴리오에서는 이 부분을 직접 TLE로 계산하는 코드를 짜면 '전설'이 될 수 있음.
-    
-    const PROXY_URL = 'https://cors-anywhere.herokuapp.com/'; // CORS 오류 회피용 프록시
-    const API_PREDICT = `http://api.open-notify.org/iss-pass.json?lat=${HAFS_COORDS.lat}&lon=${HAFS_COORDS.lon}&n=1`;
-    
-    try {
-        // 프록시를 통해 API 요청 (주의: 이 방식은 상용 서비스용이 아님)
-        // el.nextPass.textContent = "Calculating...";
-        // const response = await fetch(PROXY_URL + API_PREDICT);
-        // const data = await response.json();
-        // const nextTime = new Date(data.response[0].risetime * 1000);
-        // el.nextPass.textContent = nextTime.toLocaleString();
-
-        el.nextPass.textContent = "See Heavens-Above.com for precise time"; // 실제 구현이 까다로우므로 대체 텍스트
-
-    } catch (error) {
-        console.error("Pass prediction failed:", error);
-        el.nextPass.textContent = "Calc Error (CORS)";
-    }
-}
-
-// 창 로드 시 엔진 기동
-window.onload = initDashboard;
+// 창이 열릴 때 시스템 가동
+window.onload = initGlobe;
