@@ -1,5 +1,5 @@
 /* =========================================
-   HAFS Grand Orbital Watch V3.0 Style Guide
+   HAFS Orbital Worldview Style Guide
    ========================================= */
 :root {
     --color-bg-main: #060d1a; 
@@ -8,7 +8,6 @@
     --color-text-secondary: #778da9;
     --color-accent-gold: #e5a93d;
     --color-status-green: #00ffcc; 
-    --color-jwst-red: #ff3366;
     --font-heading: 'Playfair Display', serif; 
     --font-data: 'Roboto Mono', monospace;     
     --border-style: 1px solid rgba(229, 169, 61, 0.2);
@@ -23,18 +22,17 @@ header { background-color: var(--color-panel-bg); padding: 15px 40px; border-bot
 .title-group h1 { font-family: var(--font-heading); font-size: 24px; letter-spacing: 1px; }
 .title-group p { font-size: 14px; color: var(--color-text-secondary); }
 
-.target-selector { display: flex; flex-direction: column; align-items: center; background-color: var(--color-bg-main); padding: 10px 15px; border-radius: 4px; border: var(--border-style); }
-.target-selector label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 5px; }
-#sim-mode { background-color: var(--color-panel-bg); color: var(--color-accent-gold); border: 1px solid var(--color-accent-gold); padding: 5px; font-family: var(--font-data); font-weight: bold; border-radius: 4px; outline: none; cursor: pointer; }
-
 .system-status { font-family: var(--font-data); font-size: 14px; text-align: right; }
-.status-dot { display: inline-block; width: 10px; height: 10px; background-color: var(--color-status-green); border-radius: 50%; box-shadow: 0 0 10px var(--color-status-green); margin-right: 5px;}
-#mode-name-display { font-weight: bold; color: var(--color-status-green); }
+.status-dot { display: inline-block; width: 10px; height: 10px; background-color: var(--color-status-green); border-radius: 50%; box-shadow: 0 0 10px var(--color-status-green); margin-right: 5px; transition: 0.3s;}
+.status-dot.loading { background-color: var(--color-accent-gold); box-shadow: 0 0 10px var(--color-accent-gold); animation: pulse 1s infinite; }
+#status-text { font-weight: bold; color: var(--color-status-green); }
+
+@keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
 .dashboard-grid {
     display: grid; width: 95%; margin: 30px auto; gap: 20px;
     grid-template-areas: "ctrl map info";
-    grid-template-columns: 300px 1fr 300px;
+    grid-template-columns: 350px 1fr 350px;
     height: calc(100vh - 150px);
 }
 
@@ -42,29 +40,31 @@ header { background-color: var(--color-panel-bg); padding: 15px 40px; border-bot
 .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(136, 146, 176, 0.2); padding-bottom: 10px; margin-bottom: 20px; }
 .panel-header h2 { font-family: var(--font-heading); font-size: 16px; color: var(--color-accent-gold); }
 
-.mono-data { font-family: var(--font-data); font-weight: bold; color: var(--color-accent-gold); display: block; margin-top: 5px;}
-
-.map-panel { grid-area: map; padding: 10px; overflow: hidden; }
-.viz-container { flex-grow: 1; border-radius: 4px; width: 100%; height: 100%; position: relative; background-color: #000; }
+.map-panel { grid-area: map; padding: 0; position: relative; border-radius: 4px; overflow: hidden;}
+.viz-container { width: 100%; height: 100%; background-color: #000; }
 
 .control-panel { grid-area: ctrl; overflow-y: auto; }
 .info-panel { grid-area: info; }
 
+/* 위성 리스트 디자인 */
+.sat-list { display: flex; flex-direction: column; gap: 10px; }
+.sat-item { 
+    background-color: var(--color-bg-main); border: 1px solid rgba(119, 141, 169, 0.3); 
+    padding: 15px; border-radius: 4px; cursor: pointer; transition: 0.2s;
+    display: flex; flex-direction: column; gap: 5px;
+}
+.sat-item:hover { border-color: var(--color-accent-gold); }
+.sat-item.active { border-color: var(--color-status-green); background-color: rgba(0, 255, 204, 0.05); }
+.sat-item-title { font-weight: bold; font-size: 16px; color: var(--color-text-primary); }
+.sat-item-desc { font-size: 12px; color: var(--color-text-secondary); line-height: 1.4;}
+
+.mono-data { font-family: var(--font-data); font-weight: bold; color: var(--color-accent-gold); }
+
 .control-group label { display: block; font-size: 12px; color: var(--color-text-secondary); margin-bottom: 5px; }
 .control-group input[type="range"] { width: 100%; margin-bottom: 5px; accent-color: var(--color-accent-gold); }
-.control-group select { width: 100%; background-color: var(--color-bg-main); color: var(--color-text-primary); border: 1px solid var(--color-text-secondary); padding: 5px; border-radius: 4px; margin-bottom: 10px;}
 
-.theme-btn { background: none; border: 1px solid var(--color-accent-gold); color: var(--color-accent-gold); padding: 8px 10px; font-family: var(--font-data); cursor: pointer; border-radius: 4px; transition: 0.3s; }
-.theme-btn:hover { background-color: var(--color-accent-gold); color: var(--color-panel-bg); }
+.telemetry-card { background-color: var(--color-bg-main); padding: 20px; border-radius: 4px; border: var(--border-style); }
+.tele-data-row { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 10px 0; }
+.tele-data-row label { font-size: 12px; color: var(--color-text-secondary); }
 
-.data-card { background-color: var(--color-bg-main); padding: 15px; border-radius: 4px; border: var(--border-style); }
-.data-card label { display: block; font-size: 12px; color: var(--color-text-secondary); margin-bottom: 5px; font-weight: bold;}
 .special-data-card { background-color: rgba(212, 175, 55, 0.1); border: 1px solid var(--color-accent-gold); padding: 20px; border-radius: 4px; }
-.special-text { font-size: 24px; color: var(--color-status-green) !important; }
-
-/* JWST 관측용 십자선 오버레이 */
-.crosshair-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
-.ch-line { position: absolute; background-color: rgba(255, 51, 102, 0.5); }
-.ch-h { width: 100%; height: 1px; top: 50%; left: 0; }
-.ch-v { width: 1px; height: 100%; top: 0; left: 50%; }
-.ch-target { position: absolute; top: 52%; left: 51%; color: var(--color-jwst-red); font-family: var(--font-data); font-size: 12px; text-shadow: 0 0 5px #000; }

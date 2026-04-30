@@ -3,105 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAFS Grand Orbital Watch V3.0</title>
+    <title>HAFS Orbital Worldview</title>
+    <!-- 폰트 -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     
-    <!-- Three.js 코어 및 궤도 컨트롤러 -->
+    <!-- 3D 및 궤도 연산 라이브러리 (CDN) -->
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://unpkg.com/globe.gl"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.1.3/satellite.min.js"></script>
 </head>
-<body class="dark-mode">
+<body>
     
     <header>
         <div class="header-container">
             <div class="hafs-logo">HAFS</div>
             <div class="title-group">
-                <h1>GRAND ORBITAL WATCH V3.0</h1>
-                <p>Unified 3D Astrophysical Engine & JWST Observatory</p>
+                <h1>ORBITAL WORLDVIEW</h1>
+                <p>NASA Earth Observatory & SGP4 Tracking System</p>
             </div>
             
-            <div class="target-selector">
-                <label for="sim-mode">SIMULATION MODE</label>
-                <select id="sim-mode">
-                    <option value="solar">O1. 태양계 오비탈 탐사 (Solar System)</option>
-                    <option value="eclipse">O2. 3D 일식/월식 시뮬레이터 (Eclipses)</option>
-                    <option value="jwst">O3. JWST 심우주 관측소 (Deep Space)</option>
-                </select>
-            </div>
-
             <div class="system-status">
-                <span class="status-dot"></span> <span id="mode-name-display">ENGINE LIVE</span>
+                <span class="status-dot"></span> <span id="status-text">INITIALIZING ENGINE...</span>
             </div>
         </div>
     </header>
 
     <main class="dashboard-grid">
         
-        <!-- 좌측: 시뮬레이션 제어 패널 -->
+        <!-- 좌측: 위성 목록 및 제어 -->
         <section class="panel control-panel">
-            <div class="panel-header"><h2>O1. PHYSICS CONTROLS</h2></div>
+            <div class="panel-header"><h2>O1. SATELLITE CONSTELLATION</h2></div>
             
-            <!-- [모드 1] 태양계 컨트롤 -->
-            <div id="controls-solar" class="control-group">
-                <label>시뮬레이션 배속 (Time Dilation)</label>
-                <input type="range" id="solar-speed" min="0" max="200" value="20">
-                <span id="solar-speed-val" class="mono-data">20x</span>
+            <p style="font-size: 12px; color: var(--color-text-secondary); margin-bottom: 15px;">
+                관측할 위성을 선택하세요. 시스템이 실시간 TLE 데이터를 파싱하여 SGP4 모델로 궤도를 그립니다.
+            </p>
+
+            <!-- 위성 선택 리스트 -->
+            <div class="sat-list" id="sat-list">
+                <!-- JS에서 동적으로 생성됨 -->
             </div>
 
-            <!-- [모드 2] 일식/월식 컨트롤 (수정 및 연동 완료) -->
-            <div id="controls-eclipse" class="control-group" style="display: none;">
-                <label>달 궤도 평면 Z축 오프셋 (부분일식/개기일식 조절)</label>
-                <input type="range" id="eclipse-offset" min="-10" max="10" value="0" step="0.1">
-                <span id="eclipse-offset-val" class="mono-data">Perfect Alignment (0.0)</span>
-                
-                <label style="margin-top: 15px;">달-지구 거리 (금환일식 조절)</label>
-                <input type="range" id="eclipse-dist" min="20" max="50" value="30" step="1">
-                <span id="eclipse-dist-val" class="mono-data">384,000 km</span>
-            </div>
-
-            <!-- [모드 3] JWST 컨트롤 -->
-            <div id="controls-jwst" class="control-group" style="display: none;">
-                <label>JWST 관측 타겟 스캔</label>
-                <select id="jwst-target">
-                    <option value="carina">용골자리 성운 (Carina Nebula)</option>
-                    <option value="stephan">스테판의 오중주 (Stephan's Quintet)</option>
-                    <option value="smacs">SMACS 0723 (Deep Field)</option>
-                </select>
-                <button id="btn-scan" class="theme-btn" style="width: 100%; margin-top: 10px;">▶ 관측 장비 정렬 (Slew Telescope)</button>
+            <div class="control-group" style="margin-top: 20px;">
+                <label>Orbit Trail Length (궤적 표시 길이)</label>
+                <input type="range" id="trail-slider" min="10" max="180" value="90">
+                <span id="trail-val" class="mono-data">±90 Minutes</span>
             </div>
         </section>
 
-        <!-- 중앙: 3D 메인 캔버스 -->
-        <section class="panel map-panel" style="position: relative;">
-            <div class="panel-header"><h2>O2. UNIFIED 3D CANVAS</h2></div>
-            <div id="three-container" class="viz-container"></div>
-            <!-- JWST 모드용 십자선 오버레이 -->
-            <div id="crosshair" class="crosshair-overlay" style="display:none;">
-                <div class="ch-line ch-h"></div><div class="ch-line ch-v"></div>
-                <div class="ch-target">NIRCam Active</div>
+        <!-- 중앙: 3D 월드뷰 -->
+        <section class="panel map-panel">
+            <div class="panel-header" style="position: absolute; top: 20px; left: 20px; z-index: 10; border: none; background: rgba(13, 27, 42, 0.8); padding: 10px; border-radius: 4px;">
+                <h2>O2. 3D WORLDVIEW CANVAS</h2>
             </div>
+            <div id="globeViz" class="viz-container"></div>
         </section>
 
-        <!-- 우측: 텔레메트리 및 데이터 -->
+        <!-- 우측: 라이브 텔레메트리 -->
         <section class="panel info-panel">
-            <div class="panel-header"><h2>O3. ACADEMIC DATA</h2></div>
+            <div class="panel-header"><h2>O3. LIVE TELEMETRY</h2></div>
             
-            <div id="info-content" class="data-vertical">
-                <div class="data-card">
-                    <label id="info-title">SYSTEM STATUS</label>
-                    <p id="info-desc" style="font-size: 13px; color: var(--color-text-secondary); margin-top: 10px;">
-                        초기화 중입니다...
-                    </p>
+            <div class="telemetry-card">
+                <h3 id="tele-name" style="color: var(--color-status-green); margin-bottom: 15px;">--</h3>
+                
+                <div class="tele-data-row">
+                    <label>NORAD ID</label>
+                    <span id="tele-id" class="mono-data">--</span>
                 </div>
-                <div class="special-data-card" style="margin-top: 15px;">
-                    <label id="metric-title">MAIN METRIC</label>
-                    <span id="metric-val" class="mono-data special-text" style="font-size: 20px;">--</span>
+                <div class="tele-data-row">
+                    <label>LATITUDE (위도)</label>
+                    <span id="tele-lat" class="mono-data">--.--°</span>
                 </div>
+                <div class="tele-data-row">
+                    <label>LONGITUDE (경도)</label>
+                    <span id="tele-lon" class="mono-data">--.--°</span>
+                </div>
+                <div class="tele-data-row">
+                    <label>ALTITUDE (고도)</label>
+                    <span id="tele-alt" class="mono-data">-- km</span>
+                </div>
+                <div class="tele-data-row">
+                    <label>VELOCITY (속도)</label>
+                    <span id="tele-vel" class="mono-data">-- km/s</span>
+                </div>
+            </div>
+
+            <div class="special-data-card" style="margin-top: 20px;">
+                <label>TIME TO NEXT ORBIT</label>
+                <span id="tele-period" class="mono-data special-text" style="font-size: 24px;">-- mins</span>
             </div>
         </section>
 
     </main>
+
     <script src="script.js"></script>
 </body>
 </html>
