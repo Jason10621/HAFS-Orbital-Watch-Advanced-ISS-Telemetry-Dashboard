@@ -1,93 +1,70 @@
 /* =========================================
-   HAFS 3D Orbital Watch - Ultimate Style
+   HAFS Grand Orbital Watch V3.0 Style Guide
    ========================================= */
 :root {
-    --color-bg-main: #f0f4f8;      
-    --color-panel-bg: #ffffff;     
-    --color-text-primary: #0a192f; 
-    --color-text-secondary: #495670;
-    --color-accent-gold: #b6942c;  
-    --color-status-green: #059669;
-    --font-heading: 'Playfair Display', serif; 
-    --font-data: 'Roboto Mono', monospace;     
-    --border-style: 1px solid rgba(10, 25, 47, 0.1);
-}
-
-body.dark-mode {
-    --color-bg-main: #060d1a; /* 더 깊은 심우주 색상 */
+    --color-bg-main: #060d1a; 
     --color-panel-bg: #0d1b2a;
     --color-text-primary: #e0e1dd;
     --color-text-secondary: #778da9;
     --color-accent-gold: #e5a93d;
     --color-status-green: #00ffcc; 
+    --color-jwst-red: #ff3366;
+    --font-heading: 'Playfair Display', serif; 
+    --font-data: 'Roboto Mono', monospace;     
     --border-style: 1px solid rgba(229, 169, 61, 0.2);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { background-color: var(--color-bg-main); color: var(--color-text-primary); font-family: 'Roboto', sans-serif; transition: 0.4s; overflow-x: hidden; }
+body { background-color: var(--color-bg-main); color: var(--color-text-primary); font-family: 'Roboto', sans-serif; overflow: hidden; }
 
 header { background-color: var(--color-panel-bg); padding: 15px 40px; border-bottom: 2px solid var(--color-accent-gold); display: flex; justify-content: center; }
 .header-container { width: 95%; display: flex; justify-content: space-between; align-items: center; }
 .hafs-logo { font-family: var(--font-heading); font-size: 32px; color: var(--color-accent-gold); border: 2px solid var(--color-accent-gold); padding: 5px 15px; }
-.title-group h1 { font-family: var(--font-heading); font-size: 24px; color: var(--color-text-primary); letter-spacing: 1px; }
+.title-group h1 { font-family: var(--font-heading); font-size: 24px; letter-spacing: 1px; }
 .title-group p { font-size: 14px; color: var(--color-text-secondary); }
 
 .target-selector { display: flex; flex-direction: column; align-items: center; background-color: var(--color-bg-main); padding: 10px 15px; border-radius: 4px; border: var(--border-style); }
 .target-selector label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 5px; }
-#sat-select { background-color: var(--color-panel-bg); color: var(--color-accent-gold); border: 1px solid var(--color-accent-gold); padding: 5px; font-family: var(--font-data); font-weight: bold; border-radius: 4px; outline: none; cursor: pointer; }
+#sim-mode { background-color: var(--color-panel-bg); color: var(--color-accent-gold); border: 1px solid var(--color-accent-gold); padding: 5px; font-family: var(--font-data); font-weight: bold; border-radius: 4px; outline: none; cursor: pointer; }
 
 .system-status { font-family: var(--font-data); font-size: 14px; text-align: right; }
-.theme-btn { background: none; border: 1px solid var(--color-accent-gold); color: var(--color-accent-gold); padding: 5px 10px; font-family: var(--font-data); cursor: pointer; border-radius: 4px; transition: 0.3s; margin-bottom: 5px;}
-.theme-btn:hover { background-color: var(--color-accent-gold); color: var(--color-panel-bg); }
-.status-dot { display: inline-block; width: 10px; height: 10px; background-color: var(--color-status-green); border-radius: 50%; box-shadow: 0 0 10px var(--color-status-green); }
-#sat-name-display { font-weight: bold; color: var(--color-status-green); }
-#last-update { font-size: 12px; color: var(--color-text-secondary); margin-top: 5px; }
+.status-dot { display: inline-block; width: 10px; height: 10px; background-color: var(--color-status-green); border-radius: 50%; box-shadow: 0 0 10px var(--color-status-green); margin-right: 5px;}
+#mode-name-display { font-weight: bold; color: var(--color-status-green); }
 
-/* Grid 구조 개편 (세로로 더 길게) */
 .dashboard-grid {
     display: grid; width: 95%; margin: 30px auto; gap: 20px;
-    grid-template-areas: 
-        "map map tele"
-        "map map hafs"
-        "live live set";
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: auto auto 300px;
+    grid-template-areas: "ctrl map info";
+    grid-template-columns: 300px 1fr 300px;
+    height: calc(100vh - 150px);
 }
 
-.panel { background-color: var(--color-panel-bg); border: var(--border-style); border-radius: 4px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.4s; }
-body.dark-mode .panel { box-shadow: 0 10px 30px -15px rgba(0,0,0,0.8); }
+.panel { background-color: var(--color-panel-bg); border: var(--border-style); border-radius: 4px; padding: 20px; box-shadow: 0 10px 30px -15px rgba(0,0,0,0.8); display: flex; flex-direction: column;}
 .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(136, 146, 176, 0.2); padding-bottom: 10px; margin-bottom: 20px; }
-.panel-header h2 { font-family: var(--font-heading); font-size: 18px; color: var(--color-accent-gold); }
-.mono-data { font-family: var(--font-data); font-weight: bold; color: var(--color-accent-gold); }
+.panel-header h2 { font-family: var(--font-heading); font-size: 16px; color: var(--color-accent-gold); }
 
-.map-panel { grid-area: map; height: 650px; display: flex; flex-direction: column; padding: 10px; }
-.map-container { flex-grow: 1; border-radius: 4px; overflow: hidden; }
+.mono-data { font-family: var(--font-data); font-weight: bold; color: var(--color-accent-gold); display: block; margin-top: 5px;}
 
-.telemetry-panel { grid-area: tele; }
-.hafs-panel { grid-area: hafs; }
-.live-panel { grid-area: live; padding: 10px;}
-.settings-panel { grid-area: set; }
+.map-panel { grid-area: map; padding: 10px; overflow: hidden; }
+.viz-container { flex-grow: 1; border-radius: 4px; width: 100%; height: 100%; position: relative; background-color: #000; }
 
-.data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-.data-card { background-color: var(--color-bg-main); padding: 15px; border-radius: 4px; }
-.data-card label { display: block; font-size: 12px; color: var(--color-text-secondary); margin-bottom: 5px; }
-.data-card span { font-size: 18px; }
+.control-panel { grid-area: ctrl; overflow-y: auto; }
+.info-panel { grid-area: info; }
 
+.control-group label { display: block; font-size: 12px; color: var(--color-text-secondary); margin-bottom: 5px; }
+.control-group input[type="range"] { width: 100%; margin-bottom: 5px; accent-color: var(--color-accent-gold); }
+.control-group select { width: 100%; background-color: var(--color-bg-main); color: var(--color-text-primary); border: 1px solid var(--color-text-secondary); padding: 5px; border-radius: 4px; margin-bottom: 10px;}
+
+.theme-btn { background: none; border: 1px solid var(--color-accent-gold); color: var(--color-accent-gold); padding: 8px 10px; font-family: var(--font-data); cursor: pointer; border-radius: 4px; transition: 0.3s; }
+.theme-btn:hover { background-color: var(--color-accent-gold); color: var(--color-panel-bg); }
+
+.data-card { background-color: var(--color-bg-main); padding: 15px; border-radius: 4px; border: var(--border-style); }
+.data-card label { display: block; font-size: 12px; color: var(--color-text-secondary); margin-bottom: 5px; font-weight: bold;}
 .special-data-card { background-color: rgba(212, 175, 55, 0.1); border: 1px solid var(--color-accent-gold); padding: 20px; border-radius: 4px; }
-.special-text { font-size: 28px; }
+.special-text { font-size: 24px; color: var(--color-status-green) !important; }
 
-.iframe-container { width: 100%; height: 100%; border-radius: 4px; overflow: hidden;}
-.iframe-container iframe { width: 100%; height: 100%; border: none; }
-
-/* 신규: 시각적 설정 체크박스 리스트 */
-.toggle-list { display: flex; flex-direction: column; gap: 15px; }
-.toggle-row { display: flex; align-items: center; cursor: pointer; }
-.toggle-row input[type="checkbox"] { 
-    appearance: none; width: 40px; height: 20px; background: var(--color-bg-main); border: 1px solid var(--color-text-secondary); border-radius: 20px; position: relative; cursor: pointer; outline: none; transition: 0.3s; margin-right: 10px;
-}
-.toggle-row input[type="checkbox"]::after {
-    content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: var(--color-text-secondary); border-radius: 50%; transition: 0.3s;
-}
-.toggle-row input[type="checkbox"]:checked { background: var(--color-status-green); border-color: var(--color-status-green); }
-.toggle-row input[type="checkbox"]:checked::after { background: #fff; left: 22px; }
-.toggle-label { font-size: 14px; font-family: var(--font-data); color: var(--color-text-primary); }
+/* JWST 관측용 십자선 오버레이 */
+.crosshair-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+.ch-line { position: absolute; background-color: rgba(255, 51, 102, 0.5); }
+.ch-h { width: 100%; height: 1px; top: 50%; left: 0; }
+.ch-v { width: 1px; height: 100%; top: 0; left: 50%; }
+.ch-target { position: absolute; top: 52%; left: 51%; color: var(--color-jwst-red); font-family: var(--font-data); font-size: 12px; text-shadow: 0 0 5px #000; }

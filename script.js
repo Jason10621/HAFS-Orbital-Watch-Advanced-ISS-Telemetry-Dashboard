@@ -1,220 +1,433 @@
 // =======================================================================
-// HAFS Orbital Watch - Ultimate 3D Engine & Control Logic
+// HAFS Grand Orbital Watch V3.0 - Unified 3D Engine
 // =======================================================================
 
-const HAFS_COORDS = { lat: 37.3323, lon: 127.2415 };
-const BACKEND_URL = 'http://localhost:3000/api/telemetry/'; 
-const UPDATE_INTERVAL_MS = 2000; // 더 부드러운 움직임을 위해 2초로 단축
-
-// 상태 변수
-let world; 
-let isMetric = true;
-let currentSatId = 'iss';
-let trajectoryData = []; 
-
-// 5가지 옵션 상태
-let opts = {
-    autoTrack: true,
-    showTrail: true,
-    atmosphere: true,
-    stars: true,
-    nightMap: false
+// --- 글로벌 엔진 상태 ---
+const engine = {
+    scene: null, camera: null, renderer: null, controls: null,
+    animationId: null, currentMode: 'solar',
+    objects: {}, // 모드별 3D 객체 저장소
+    timeOffset: 0
 };
 
-const el = {
-    lat: document.getElementById('lat-val'), lon: document.getElementById('lon-val'),
-    alt: document.getElementById('alt-val'), vel: document.getElementById('vel-val'),
-    distHafs: document.getElementById('dist-hafs'), lastUpdate: document.getElementById('last-update'),
-    satName: document.getElementById('sat-name-display'), satSelect: document.getElementById('sat-select'),
-    unitToggle: document.getElementById('unit-toggle'), themeToggle: document.getElementById('theme-toggle'),
+// --- DOM 요소 바인딩 ---
+const UI = {
+    container: document.getElementById('three-container'),
+    modeSelect: document.getElementById('sim-mode'),
+    modeDisplay: document.getElementById('mode-name-display'),
+    infoTitle: document.getElementById('info-title'),
+    infoDesc: document.getElementById('info-desc'),
+    metricTitle: document.getElementById('metric-title'),
+    metricVal: document.getElementById('metric-val'),
+    crosshair: document.getElementById('crosshair'),
     
-    // 5가지 옵션 체크박스
-    chkTrack: document.getElementById('opt-autotrack'), chkTrail: document.getElementById('opt-trail'),
-    chkAtmo: document.getElementById('opt-atmosphere'), chkStars: document.getElementById('opt-stars'),
-    chkNight: document.getElementById('opt-nightmap')
+    // 컨트롤 패널들
+    panels: {
+        solar: document.getElementById('controls-solar'),
+        eclipse: document.getElementById('controls-eclipse'),
+        jwst: document.getElementById('controls-jwst')
+    },
+    
+    // 입력 요소
+    solarSpeed: document.getElementById('solar-speed'),
+    solarSpeedVal: document.getElementById('solar-speed-val'),
+    eclipseOffset: document.getElementById('eclipse-offset'),
+    eclipseOffsetVal: document.getElementById('eclipse-offset-val'),
+    eclipseDist: document.getElementById('eclipse-dist'),
+    eclipseDistVal: document.getElementById('eclipse-dist-val'),
+    jwstTarget: document.getElementById('jwst-target'),
+    jwstScanBtn: document.getElementById('btn-scan')
 };
 
-// ================= [ 1. 고품질 3D 위성 모델링 (Three.js) ] =================
-function createSatelliteMesh() {
-    const group = new THREE.Group();
+// ================= [ 엔진 초기화 ] =================
+function initEngine() {
+    engine.scene = new THREE.Scene();
     
-    // 1. 위성 본체 (금색 실린더)
-    const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.5, 1.5, 16);
-    const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0xd4af37, emissive: 0x222222 });
-    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    body.rotation.z = Math.PI / 2; // 눕히기
+    // 카메라 설정
+    engine.camera = new THREE.PerspectiveCamera(45, UI.container.clientWidth / UI.container.clientHeight, 0.1, 10000);
     
-    // 2. 태양광 패널 (파란색 판 2개)
-    const panelGeometry = new THREE.BoxGeometry(3, 0.1, 1.5);
-    const panelMaterial = new THREE.MeshPhongMaterial({ color: 0x1e90ff, side: THREE.DoubleSide });
-    
-    const panel1 = new THREE.Mesh(panelGeometry, panelMaterial);
-    panel1.position.y = 1;
-    const panel2 = new THREE.Mesh(panelGeometry, panelMaterial);
-    panel2.position.y = -1;
+    // 렌더러 설정 (그림자 렌더링 활성화 - 일식의 핵심)
+    engine.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    engine.renderer.setSize(UI.container.clientWidth, UI.container.clientHeight);
+    engine.renderer.shadowMap.enabled = true;
+    engine.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 부드러운 그림자
+    UI.container.appendChild(engine.renderer.domElement);
 
-    group.add(body);
-    group.add(panel1);
-    group.add(panel2);
-    
-    // 크기를 지구 스케일에 맞게 아주 작게 조정
-    group.scale.set(0.5, 0.5, 0.5); 
-    return group;
-}
+    // 궤도 컨트롤러
+    engine.controls = new THREE.OrbitControls(engine.camera, engine.renderer.domElement);
+    engine.controls.enableDamping = true;
+    engine.controls.dampingFactor = 0.05;
 
-// ================= [ 2. 3D 지구본 초기화 ] =================
-function initGlobe() {
-    const container = document.getElementById('globeViz');
-    
-    // 텍스처 (기본: 낮 지도, 별빛 우주)
-    const mapDay = 'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg';
-    const bgStars = 'https://unpkg.com/three-globe/example/img/night-sky.png';
+    // 리사이즈 이벤트
+    window.addEventListener('resize', () => {
+        engine.camera.aspect = UI.container.clientWidth / UI.container.clientHeight;
+        engine.camera.updateProjectionMatrix();
+        engine.renderer.setSize(UI.container.clientWidth, UI.container.clientHeight);
+    });
 
-    world = Globe()(container)
-        .globeImageUrl(mapDay)
-        .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
-        .backgroundImageUrl(bgStars)
-        .showAtmosphere(opts.atmosphere) // 옵션 연동
-        .atmosphereColor('#38bdf8')
-        .atmosphereAltitude(0.15)
-        .pointOfView({ lat: HAFS_COORDS.lat, lng: HAFS_COORDS.lon, altitude: 2.5 })
-        
-        // HAFS 마커
-        .ringsData([{ lat: HAFS_COORDS.lat, lng: HAFS_COORDS.lon }])
-        .ringColor(() => '#d4af37')
-        .ringMaxRadius(3)
-        .ringPropagationSpeed(1)
-        .ringRepeatPeriod(1000);
-
-    // 카메라 조명 추가 (위성 모델이 잘 보이도록)
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    directionalLight.position.set(1, 1, 1);
-    world.scene().add(directionalLight);
-
+    // 이벤트 리스너 바인딩
     setupEventListeners();
-    fetchSatelliteData();
-    setInterval(fetchSatelliteData, UPDATE_INTERVAL_MS);
+
+    // 첫 화면 로드
+    switchMode('solar');
 }
 
-// ================= [ 3. 백엔드 통신 및 시각화 업데이트 ] =================
-async function fetchSatelliteData() {
-    try {
-        const response = await fetch(BACKEND_URL + currentSatId);
-        if (!response.ok) throw new Error("Backend Sync Error");
-        const data = await response.json();
+// 씬 초기화 (모드 변경 시 호출)
+function clearScene() {
+    if (engine.animationId) cancelAnimationFrame(engine.animationId);
+    while(engine.scene.children.length > 0){ 
+        const obj = engine.scene.children[0];
+        engine.scene.remove(obj); 
+    }
+    engine.objects = {};
+    engine.timeOffset = 0;
+}
 
-        updateTelemetryDom(data);
-        update3DGlobe(data);
+// ================= [ 모드 스위처 ] =================
+function switchMode(mode) {
+    clearScene();
+    engine.currentMode = mode;
+    
+    // UI 패널 토글
+    Object.values(UI.panels).forEach(p => p.style.display = 'none');
+    UI.panels[mode].style.display = 'block';
+    UI.crosshair.style.display = mode === 'jwst' ? 'block' : 'none';
+
+    // 모드별 씬 빌드
+    if (mode === 'solar') buildSolarSystem();
+    else if (mode === 'eclipse') buildEclipseSimulator();
+    else if (mode === 'jwst') buildJWSTObservatory();
+}
+
+// ================= [ 1. 고해상도 태양계 모드 ] =================
+function buildSolarSystem() {
+    UI.modeDisplay.textContent = "SOLAR SYSTEM MECHANICS";
+    UI.infoTitle.textContent = "KEPLER'S LAWS OF PLANETARY MOTION";
+    UI.infoDesc.textContent = "지구를 포함한 행성들은 케플러의 법칙에 따라 태양을 중심으로 타원에 가까운 궤도를 공전합니다. 지구 곁에는 위성인 달(Moon)이 함께 공전하고 있습니다.";
+    UI.metricTitle.textContent = "ELAPSED TIME";
+    
+    engine.camera.position.set(0, 100, 150);
+    engine.controls.target.set(0, 0, 0);
+
+    // 기본 조명
+    engine.scene.add(new THREE.AmbientLight(0x222222));
+    const sunLight = new THREE.PointLight(0xffffff, 2, 500);
+    engine.scene.add(sunLight);
+
+    // 태양
+    const sunGeo = new THREE.SphereGeometry(10, 32, 32);
+    const sunMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+    const sun = new THREE.Mesh(sunGeo, sunMat);
+    engine.scene.add(sun);
+
+    // 행성 데이터 (수성, 금성, 지구(+달), 화성, 목성, 토성)
+    const planetsData = [
+        { name: "Mercury", r: 1, d: 20, speed: 0.04, color: 0xaaaaaa },
+        { name: "Venus", r: 2, d: 30, speed: 0.015, color: 0xffdd99 },
+        { name: "Earth", r: 2.2, d: 45, speed: 0.01, color: 0x3366ff, hasMoon: true },
+        { name: "Mars", r: 1.5, d: 60, speed: 0.008, color: 0xff4422 },
+        { name: "Jupiter", r: 6, d: 90, speed: 0.002, color: 0xdda050 },
+        { name: "Saturn", r: 5, d: 130, speed: 0.0009, color: 0xead6b8, hasRing: true }
+    ];
+
+    engine.objects.planets = [];
+
+    planetsData.forEach(pData => {
+        // 행성 생성
+        const pMat = new THREE.MeshStandardMaterial({ color: pData.color, roughness: 0.8 });
+        const pMesh = new THREE.Mesh(new THREE.SphereGeometry(pData.r, 32, 32), pMat);
+        pMesh.position.x = pData.d;
+
+        // 토성 고리
+        if(pData.hasRing) {
+            const ringGeo = new THREE.RingGeometry(pData.r * 1.5, pData.r * 2.5, 32);
+            const ringMat = new THREE.MeshStandardMaterial({ color: pData.color, side: THREE.DoubleSide });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = Math.PI / 2;
+            pMesh.add(ring);
+        }
+
+        // 지구의 달 추가 (핵심 디테일)
+        if(pData.hasMoon) {
+            const moonGeo = new THREE.SphereGeometry(0.5, 16, 16);
+            const moonMat = new THREE.MeshStandardMaterial({ color: 0xcccccc });
+            const moon = new THREE.Mesh(moonGeo, moonMat);
+            moon.position.x = 4; // 지구로부터의 거리
+            
+            const moonPivot = new THREE.Group();
+            moonPivot.add(moon);
+            pMesh.add(moonPivot); // 달을 지구 메쉬에 종속시킴
+            engine.objects.moonPivot = moonPivot;
+        }
+
+        const pivot = new THREE.Group();
+        pivot.add(pMesh);
+        engine.scene.add(pivot);
+
+        // 궤도선
+        const path = new THREE.Mesh(
+            new THREE.RingGeometry(pData.d - 0.2, pData.d + 0.2, 64),
+            new THREE.MeshBasicMaterial({ color: 0x333333, side: THREE.DoubleSide })
+        );
+        path.rotation.x = Math.PI / 2;
+        engine.scene.add(path);
+
+        engine.objects.planets.push({ pivot, mesh: pMesh, speed: pData.speed });
+    });
+
+    addStarfield(5000, 300);
+    animateSolar();
+}
+
+function animateSolar() {
+    if(engine.currentMode !== 'solar') return;
+    engine.animationId = requestAnimationFrame(animateSolar);
+
+    const speed = parseFloat(UI.solarSpeed.value);
+    engine.timeOffset += speed / 100;
+    UI.metricVal.textContent = `Day ${Math.floor(engine.timeOffset)}`;
+
+    engine.objects.planets.forEach(p => {
+        p.pivot.rotation.y += p.speed * speed;
+        p.mesh.rotation.y += 0.05; // 행성 자전
+    });
+
+    // 달의 공전 (지구 주위)
+    if(engine.objects.moonPivot) {
+        engine.objects.moonPivot.rotation.y += 0.05 * speed;
+    }
+
+    engine.controls.update();
+    engine.renderer.render(engine.scene, engine.camera);
+}
+
+// ================= [ 2. 3D 일식/월식 시뮬레이터 (그림자 연동 완벽 수정) ] =================
+function buildEclipseSimulator() {
+    UI.modeDisplay.textContent = "3D ECLIPSE DYNAMICS";
+    UI.infoTitle.textContent = "SHADOW GEOMETRY";
+    UI.infoDesc.textContent = "슬라이더를 조절하여 태양, 달, 지구의 3D 정렬을 맞춰보세요. Z축 오프셋이 0일 때 달의 본그림자(Umbra)가 지구에 닿아 개기일식이 발생합니다.";
+    UI.metricTitle.textContent = "MOON Z-OFFSET";
+    
+    // 시점 설정 (지구 뒤에서 태양을 바라봄)
+    engine.camera.position.set(0, 20, 100);
+    engine.controls.target.set(0, 0, 0);
+
+    // [핵심] 실제 그림자를 캐스팅하는 태양빛 설정
+    engine.scene.add(new THREE.AmbientLight(0x111111));
+    
+    const sunLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    sunLight.position.set(0, 0, -500); // 태양은 아주 멀리 Z축 마이너스 방향에 위치
+    sunLight.target.position.set(0, 0, 0);
+    
+    // 그림자 해상도 및 범위 설정
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 100;
+    sunLight.shadow.camera.far = 1000;
+    sunLight.shadow.camera.left = -50;
+    sunLight.shadow.camera.right = 50;
+    sunLight.shadow.camera.top = 50;
+    sunLight.shadow.camera.bottom = -50;
+    engine.scene.add(sunLight);
+    engine.scene.add(sunLight.target);
+
+    // 시각용 태양 구체 (빛을 내는 역할만 함, 그림자는 위 DirectionalLight가 담당)
+    const sunVis = new THREE.Mesh(
+        new THREE.SphereGeometry(20, 32, 32),
+        new THREE.MeshBasicMaterial({ color: 0xffcc00 })
+    );
+    sunVis.position.set(0, 0, -450);
+    engine.scene.add(sunVis);
+
+    // 1. 지구 (가운데 고정)
+    const earth = new THREE.Mesh(
+        new THREE.SphereGeometry(15, 64, 64),
+        new THREE.MeshStandardMaterial({ color: 0x1e90ff, roughness: 0.6 })
+    );
+    earth.position.set(0, 0, 0);
+    earth.receiveShadow = true; // 지구는 그림자를 받음!
+    engine.scene.add(earth);
+
+    // 2. 달 (사용자가 슬라이더로 움직일 객체)
+    const moon = new THREE.Mesh(
+        new THREE.SphereGeometry(4, 32, 32),
+        new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 1.0 })
+    );
+    moon.castShadow = true; // 달은 그림자를 만듦!
+    moon.receiveShadow = true;
+    engine.scene.add(moon);
+    
+    engine.objects.earth = earth;
+    engine.objects.moon = moon;
+
+    addStarfield(2000, 500);
+    
+    // 초기 위치 설정
+    updateEclipsePhysics();
+    animateEclipse();
+}
+
+// 일식 슬라이더 물리 업데이트 로직
+function updateEclipsePhysics() {
+    if(engine.currentMode !== 'eclipse') return;
+    
+    const zOffset = parseFloat(UI.eclipseOffset.value); // 부분일식용 위아래 조절
+    const dist = parseFloat(UI.eclipseDist.value);      // 금환일식용 거리 조절
+    
+    // 달의 위치를 슬라이더 값에 따라 태양과 지구 사이(-Z 방향)에 배치
+    engine.objects.moon.position.set(0, zOffset, -dist);
+    
+    // UI 업데이트
+    UI.eclipseOffsetVal.textContent = zOffset === 0 ? "Perfect Alignment (Total)" : `Offset: ${zOffset}`;
+    UI.eclipseDistVal.textContent = `${dist * 10000} km`;
+    UI.metricVal.textContent = `${zOffset}`;
+}
+
+function animateEclipse() {
+    if(engine.currentMode !== 'eclipse') return;
+    engine.animationId = requestAnimationFrame(animateEclipse);
+    
+    // 지구 자전
+    engine.objects.earth.rotation.y += 0.005;
+    
+    engine.controls.update();
+    engine.renderer.render(engine.scene, engine.camera);
+}
+
+
+// ================= [ 3. JWST 심우주 관측소 (파티클 엔진) ] =================
+function buildJWSTObservatory() {
+    UI.modeDisplay.textContent = "JWST DEEP SPACE OBSERVATORY";
+    UI.infoTitle.textContent = "INFRARED IMAGING (NIRCam)";
+    UI.infoDesc.textContent = "제임스 웹 우주 망원경은 가시광선이 아닌 적외선을 포착하여, 우주 먼지 너머에 숨겨진 별들의 탄생(성운)과 수십억 광년 떨어진 은하의 빛을 관측합니다.";
+    UI.metricTitle.textContent = "SENSOR STATUS";
+    UI.metricVal.textContent = "STANDBY";
+    UI.metricVal.style.color = "var(--color-jwst-red)";
+    
+    engine.camera.position.set(0, 0, 200);
+    engine.controls.target.set(0, 0, 0);
+    
+    // 깊고 방대한 별 배경
+    addStarfield(10000, 1000);
+
+    engine.objects.nebulae = {};
+
+    // 1. 카리나 성운 (Carina Nebula - 주황/푸른색 가스구름)
+    engine.objects.nebulae['carina'] = createNebula(0xff5500, 0x00ffff, 8000, new THREE.Vector3(300, 100, -200));
+    
+    // 2. 스테판의 오중주 (Stephan's Quintet - 5개의 은하 은은한 노란색)
+    engine.objects.nebulae['stephan'] = createNebula(0xffddaa, 0xddbb88, 5000, new THREE.Vector3(-400, -200, 100));
+    
+    // 3. SMACS 0723 (딥 필드 - 붉고 푸른 점들의 은하단)
+    engine.objects.nebulae['smacs'] = createNebula(0xff2222, 0x4444ff, 6000, new THREE.Vector3(100, -300, -500), true);
+
+    animateJWST();
+}
+
+// 절차적 성운(Nebula) 생성기 - 수학적 파티클 분산
+function createNebula(color1, color2, particleCount, position, isGalaxyCluster = false) {
+    const geo = new THREE.BufferGeometry();
+    const posArray = new Float32Array(particleCount * 3);
+    const colorArray = new Float32Array(particleCount * 3);
+    
+    const colorObj1 = new THREE.Color(color1);
+    const colorObj2 = new THREE.Color(color2);
+
+    for(let i=0; i<particleCount * 3; i+=3) {
+        // 가우스 분포에 가까운 중앙 집중형 난수 생성
+        const x = (Math.random() - 0.5) * (Math.random() * 200);
+        const y = (Math.random() - 0.5) * (Math.random() * 150);
+        const z = (Math.random() - 0.5) * (Math.random() * 100);
         
-        const dist = calculateHaversineDistance(HAFS_COORDS.lat, HAFS_COORDS.lon, data.latitude, data.longitude);
-        updateHafsSpecialData(dist, data.altitude);
+        posArray[i] = x; posArray[i+1] = y; posArray[i+2] = z;
 
-    } catch (error) {
-        console.error("Fetch Error:", error);
-        el.satName.textContent = "OFFLINE";
-        el.satName.style.color = "red";
+        // 색상 혼합
+        const mixRatio = Math.random();
+        const c = colorObj1.clone().lerp(colorObj2, mixRatio);
+        colorArray[i] = c.r; colorArray[i+1] = c.g; colorArray[i+2] = c.b;
     }
+
+    geo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(colorArray, 3));
+
+    const mat = new THREE.PointsMaterial({
+        size: isGalaxyCluster ? 2.0 : 1.5,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending // 빛이 겹칠수록 밝아지는 효과
+    });
+
+    const nebula = new THREE.Points(geo, mat);
+    nebula.position.copy(position);
+    engine.scene.add(nebula);
+    return nebula;
 }
 
-function update3DGlobe(data) {
-    // GOES-16 같은 정지궤도 위성은 고도가 35,000km로 매우 높으므로 지구 반경(6371) 기준 정규화
-    const normalizedAlt = data.altitude / 6371;
+function animateJWST() {
+    if(engine.currentMode !== 'jwst') return;
+    engine.animationId = requestAnimationFrame(animateJWST);
+    
+    // 성운들이 아주 미세하게 회전하며 생동감 부여
+    Object.values(engine.objects.nebulae).forEach(nebula => {
+        nebula.rotation.y += 0.0005;
+        nebula.rotation.x += 0.0002;
+    });
 
-    const satData = [{ lat: data.latitude, lng: data.longitude, alt: normalizedAlt, name: data.name }];
-
-    // 궤적 업데이트
-    trajectoryData.push([data.latitude, data.longitude, normalizedAlt]);
-    if (trajectoryData.length > 250) trajectoryData.shift(); 
-
-    // 1. 위성 렌더링 (커스텀 3D 모델 사용)
-    world.customLayerData(satData)
-         .customThreeObject(() => createSatelliteMesh()) // 이 부분이 "밋밋함"을 해결하는 핵심입니다!
-         .customThreeObjectUpdate((obj, d) => {
-             Object.assign(obj.position, world.getCoords(d.lat, d.lng, d.alt));
-             // 위성이 이동하는 방향으로 모델 회전 (간단한 임의 회전 적용)
-             obj.rotation.y += 0.05; 
-             obj.rotation.x += 0.02;
-         });
-
-    // 2. 궤적선 옵션 적용
-    if (opts.showTrail) {
-        world.pathsData([{ path: trajectoryData }])
-             .pathColor(() => 'rgba(212, 175, 55, 0.8)')
-             .pathPointAlt(p => p[2])
-             .pathStroke(2);
-    } else {
-        world.pathsData([]); // 궤적 끄기
-    }
-
-    // 3. 자동 추적 옵션 적용
-    if (opts.autoTrack) {
-        // 부드러운 카메라 이동 (1초 동안 이동)
-        // 정지궤도(GOES)처럼 고도가 높은 위성은 카메라를 더 뒤로 빼줍니다.
-        const camAlt = normalizedAlt > 1 ? normalizedAlt + 1.5 : 2.5; 
-        world.pointOfView({ lat: data.latitude, lng: data.longitude, altitude: camAlt }, 1000);
-    }
+    engine.controls.update();
+    engine.renderer.render(engine.scene, engine.camera);
 }
 
-// ================= [ 4. DOM 제어 및 5가지 옵션 로직 ] =================
+
+// ================= [ 유틸리티 및 이벤트 리스너 ] =================
+function addStarfield(count, radius) {
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(count * 3);
+    for(let i=0; i<count*3; i++) { pos[i] = (Math.random() - 0.5) * radius * 2; }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.PointsMaterial({color: 0xffffff, size: 0.5, transparent:true, opacity:0.6});
+    engine.scene.add(new THREE.Points(geo, mat));
+}
 
 function setupEventListeners() {
-    el.unitToggle.addEventListener('click', () => { isMetric = !isMetric; el.unitToggle.textContent = isMetric ? "Metric (km)" : "Imperial (mi)"; });
-    el.themeToggle.addEventListener('click', () => { document.body.classList.toggle('dark-mode'); });
-    
-    el.satSelect.addEventListener('change', (e) => {
-        currentSatId = e.target.value;
-        trajectoryData = []; // 위성 변경 시 궤적 초기화
-        fetchSatelliteData();
-    });
+    // 1. 모드 스위치
+    UI.modeSelect.addEventListener('change', (e) => switchMode(e.target.value));
 
-    // 5가지 시각 옵션 이벤트
-    el.chkTrack.addEventListener('change', (e) => opts.autoTrack = e.target.checked);
-    
-    el.chkTrail.addEventListener('change', (e) => {
-        opts.showTrail = e.target.checked;
-        if(!opts.showTrail) world.pathsData([]);
-    });
+    // 2. 태양계 슬라이더
+    UI.solarSpeed.addEventListener('input', (e) => UI.solarSpeedVal.textContent = `${e.target.value}x`);
 
-    el.chkAtmo.addEventListener('change', (e) => {
-        opts.atmosphere = e.target.checked;
-        world.showAtmosphere(opts.atmosphere);
-    });
+    // 3. 일식 슬라이더 (실시간 3D 업데이트 트리거)
+    UI.eclipseOffset.addEventListener('input', updateEclipsePhysics);
+    UI.eclipseDist.addEventListener('input', updateEclipsePhysics);
 
-    el.chkStars.addEventListener('change', (e) => {
-        opts.stars = e.target.checked;
-        world.backgroundImageUrl(opts.stars ? 'https://unpkg.com/three-globe/example/img/night-sky.png' : null);
-    });
-
-    el.chkNight.addEventListener('change', (e) => {
-        opts.nightMap = e.target.checked;
-        world.globeImageUrl(opts.nightMap ? 
-            'https://unpkg.com/three-globe/example/img/earth-night.jpg' : 
-            'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
+    // 4. JWST 망원경 조준 버튼
+    UI.jwstScanBtn.addEventListener('click', () => {
+        const targetKey = UI.jwstTarget.value;
+        const targetObj = engine.objects.nebulae[targetKey];
+        
+        UI.metricVal.textContent = "SLEWING...";
+        UI.metricVal.style.color = "var(--color-accent-gold)";
+        
+        // 간단한 카메라 이동 애니메이션 (현업에서는 GSAP 등 사용)
+        let progress = 0;
+        const startPos = engine.controls.target.clone();
+        
+        function panCamera() {
+            progress += 0.02;
+            if(progress <= 1) {
+                engine.controls.target.lerpVectors(startPos, targetObj.position, progress);
+                engine.camera.position.lerpVectors(engine.camera.position, 
+                    new THREE.Vector3(targetObj.position.x, targetObj.position.y, targetObj.position.z + 100), 0.05);
+                requestAnimationFrame(panCamera);
+            } else {
+                UI.metricVal.textContent = "DATA CAPTURED";
+                UI.metricVal.style.color = "var(--color-status-green)";
+            }
+        }
+        panCamera();
     });
 }
 
-function updateTelemetryDom(data) {
-    el.satName.textContent = data.name;
-    el.satName.style.color = "var(--color-status-green)";
-    el.lastUpdate.textContent = `Update: ${new Date(data.timestamp).toLocaleTimeString()}`;
-
-    el.lat.textContent = `${Math.abs(data.latitude).toFixed(4)}° ${data.latitude >= 0 ? 'N' : 'S'}`;
-    el.lon.textContent = `${Math.abs(data.longitude).toFixed(4)}° ${data.longitude >= 0 ? 'E' : 'W'}`;
-
-    const f = isMetric ? 1 : 0.621371;
-    el.alt.textContent = `${(data.altitude * f).toFixed(2)} ${isMetric ? 'km' : 'mi'}`;
-    el.vel.textContent = `${(data.velocity * f).toFixed(0).toLocaleString()} ${isMetric ? 'km/h' : 'mph'}`;
-}
-
-function updateHafsSpecialData(surfaceDist, altitude) {
-    const dist3D = Math.sqrt(Math.pow(surfaceDist, 2) + Math.pow(altitude, 2));
-    el.distHafs.textContent = `${(dist3D * (isMetric ? 1 : 0.621371)).toFixed(2).toLocaleString()} ${isMetric ? 'km' : 'mi'}`;
-}
-
-function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
-    const dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2)**2;
-    return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-
-window.onload = initGlobe;
+// 런타임 시작
+window.onload = initEngine;
