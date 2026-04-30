@@ -1,70 +1,65 @@
 /* =========================================
-   HAFS Orbital Worldview Style Guide
+   HAFS Starlink Tracker Style Guide
    ========================================= */
 :root {
-    --color-bg-main: #060d1a; 
-    --color-panel-bg: #0d1b2a;
+    --color-bg-main: #02050a; 
     --color-text-primary: #e0e1dd;
-    --color-text-secondary: #778da9;
-    --color-accent-gold: #e5a93d;
+    --color-text-secondary: #8892b0;
+    --color-accent-gold: #d4af37;
     --color-status-green: #00ffcc; 
+    --color-hud-bg: rgba(6, 13, 26, 0.8);
     --font-heading: 'Playfair Display', serif; 
     --font-data: 'Roboto Mono', monospace;     
-    --border-style: 1px solid rgba(229, 169, 61, 0.2);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background-color: var(--color-bg-main); color: var(--color-text-primary); font-family: 'Roboto', sans-serif; overflow: hidden; }
 
-header { background-color: var(--color-panel-bg); padding: 15px 40px; border-bottom: 2px solid var(--color-accent-gold); display: flex; justify-content: center; }
-.header-container { width: 95%; display: flex; justify-content: space-between; align-items: center; }
-.hafs-logo { font-family: var(--font-heading); font-size: 32px; color: var(--color-accent-gold); border: 2px solid var(--color-accent-gold); padding: 5px 15px; }
-.title-group h1 { font-family: var(--font-heading); font-size: 24px; letter-spacing: 1px; }
-.title-group p { font-size: 14px; color: var(--color-text-secondary); }
+/* 3D 캔버스 */
+.fullscreen-viz { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background: #000;}
 
-.system-status { font-family: var(--font-data); font-size: 14px; text-align: right; }
-.status-dot { display: inline-block; width: 10px; height: 10px; background-color: var(--color-status-green); border-radius: 50%; box-shadow: 0 0 10px var(--color-status-green); margin-right: 5px; transition: 0.3s;}
-.status-dot.loading { background-color: var(--color-accent-gold); box-shadow: 0 0 10px var(--color-accent-gold); animation: pulse 1s infinite; }
-#status-text { font-weight: bold; color: var(--color-status-green); }
-
-@keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-
-.dashboard-grid {
-    display: grid; width: 95%; margin: 30px auto; gap: 20px;
-    grid-template-areas: "ctrl map info";
-    grid-template-columns: 350px 1fr 350px;
-    height: calc(100vh - 150px);
+/* 헤더 */
+.hud-header {
+    position: absolute; top: 30px; left: 50%; transform: translateX(-50%); z-index: 10;
+    display: flex; align-items: center; gap: 20px;
+    background: var(--color-hud-bg); padding: 15px 30px; border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px);
 }
+.hafs-logo { font-family: var(--font-heading); font-size: 24px; color: var(--color-accent-gold); border: 2px solid var(--color-accent-gold); padding: 5px 10px; }
+.title-group h1 { font-family: var(--font-heading); font-size: 18px; letter-spacing: 2px; }
+.title-group p { font-size: 12px; color: var(--color-text-secondary); text-align: center;}
 
-.panel { background-color: var(--color-panel-bg); border: var(--border-style); border-radius: 4px; padding: 20px; box-shadow: 0 10px 30px -15px rgba(0,0,0,0.8); display: flex; flex-direction: column;}
-.panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(136, 146, 176, 0.2); padding-bottom: 10px; margin-bottom: 20px; }
-.panel-header h2 { font-family: var(--font-heading); font-size: 16px; color: var(--color-accent-gold); }
-
-.map-panel { grid-area: map; padding: 0; position: relative; border-radius: 4px; overflow: hidden;}
-.viz-container { width: 100%; height: 100%; background-color: #000; }
-
-.control-panel { grid-area: ctrl; overflow-y: auto; }
-.info-panel { grid-area: info; }
-
-/* 위성 리스트 디자인 */
-.sat-list { display: flex; flex-direction: column; gap: 10px; }
-.sat-item { 
-    background-color: var(--color-bg-main); border: 1px solid rgba(119, 141, 169, 0.3); 
-    padding: 15px; border-radius: 4px; cursor: pointer; transition: 0.2s;
-    display: flex; flex-direction: column; gap: 5px;
+/* 패널 공통 */
+.hud-panel {
+    position: absolute; top: 120px; z-index: 10;
+    background: var(--color-hud-bg); backdrop-filter: blur(10px);
+    border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 8px; 
+    padding: 25px; width: 320px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
 }
-.sat-item:hover { border-color: var(--color-accent-gold); }
-.sat-item.active { border-color: var(--color-status-green); background-color: rgba(0, 255, 204, 0.05); }
-.sat-item-title { font-weight: bold; font-size: 16px; color: var(--color-text-primary); }
-.sat-item-desc { font-size: 12px; color: var(--color-text-secondary); line-height: 1.4;}
+.hud-panel h2 { font-family: var(--font-heading); font-size: 16px; color: var(--color-accent-gold); margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;}
+.left-panel { left: 40px; }
+.right-panel { right: 40px; border-color: rgba(0, 255, 204, 0.4); }
 
-.mono-data { font-family: var(--font-data); font-weight: bold; color: var(--color-accent-gold); }
+.stat-box { background: rgba(0,0,0,0.5); padding: 15px; border-radius: 4px; margin-bottom: 10px; border-left: 3px solid var(--color-accent-gold); }
+.stat-box label { display: block; font-size: 11px; color: var(--color-text-secondary); margin-bottom: 5px; }
+.mono-data { font-family: var(--font-data); color: var(--color-text-primary); }
+.special-text { font-size: 28px; color: #fff; font-weight: bold; }
 
-.control-group label { display: block; font-size: 12px; color: var(--color-text-secondary); margin-bottom: 5px; }
-.control-group input[type="range"] { width: 100%; margin-bottom: 5px; accent-color: var(--color-accent-gold); }
+.telemetry-box { display: flex; flex-direction: column; gap: 10px; }
+.tele-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--color-text-secondary); padding: 8px 0; border-bottom: 1px dotted rgba(255,255,255,0.1); }
+.tele-row .mono-data { color: var(--color-status-green); font-weight: bold;}
 
-.telemetry-card { background-color: var(--color-bg-main); padding: 20px; border-radius: 4px; border: var(--border-style); }
-.tele-data-row { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 10px 0; }
-.tele-data-row label { font-size: 12px; color: var(--color-text-secondary); }
+.hud-desc { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; }
 
-.special-data-card { background-color: rgba(212, 175, 55, 0.1); border: 1px solid var(--color-accent-gold); padding: 20px; border-radius: 4px; }
+/* 상태바 */
+.bottom-status {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10;
+    font-family: var(--font-data); font-size: 12px; background: var(--color-hud-bg);
+    padding: 10px 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);
+}
+.status-dot { display: inline-block; width: 10px; height: 10px; background-color: var(--color-status-green); border-radius: 50%; margin-right: 5px; }
+.loading-pulse { animation: pulse 1.5s infinite; color: var(--color-accent-gold) !important; }
+@keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+
+.theme-btn { background: rgba(0, 255, 204, 0.1); border: 1px solid var(--color-status-green); color: var(--color-status-green); padding: 10px; font-family: var(--font-data); font-weight: bold; cursor: pointer; border-radius: 4px; transition: 0.3s; }
+.theme-btn:hover { background: var(--color-status-green); color: #000; }

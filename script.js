@@ -1,248 +1,253 @@
 // =======================================================================
-// HAFS Orbital Worldview - Pure Frontend SGP4 Engine
+// HAFS Starlink Mega-Constellation Tracker V5.0
+// 빅데이터 파싱 및 렌더링 최적화 엔진
 // =======================================================================
 
-// --- 관측 대상: NASA 및 세계 주요 위성 5개 ---
-const TARGET_SATELLITES = [
-    { id: 25544, name: "ISS (ZARYA)", desc: "국제 우주 정거장. 고도 약 400km에서 인류가 상주하는 거대한 연구 시설입니다.", color: "#00ffcc" },
-    { id: 20580, name: "HST (HUBBLE)", desc: "허블 우주 망원경. 대기권 밖에서 심우주를 관측하는 인류의 눈입니다.", color: "#e5a93d" },
-    { id: 27424, name: "AQUA", desc: "NASA 지구 관측 시스템(EOS). 물의 순환을 연구하는 태양동기궤도 위성입니다.", color: "#3366ff" },
-    { id: 25994, name: "TERRA", desc: "NASA EOS 주력 위성. 지구 표면, 대기, 해양의 상태를 모니터링합니다.", color: "#ff5555" },
-    { id: 37849, name: "SUOMI NPP", desc: "NOAA 기상 및 기후 관측 위성. 초정밀 야간 카메라(VIIRS)를 탑재하고 있습니다.", color: "#cc33ff" }
-];
-
 let world;
-let satDataMap = {}; // 파싱된 위성 데이터(satrec) 저장
-let activeSatId = 25544; // 기본 활성화 위성 (ISS)
-let orbitTrailMinutes = 90; // 과거/미래 궤적 계산 길이
+let starlinkData = []; // 6000+ 개의 위성 데이터를 담을 배열
+let selectedSat = null; // 클릭한 위성
+let updateInterval;
 
-// DOM 캐싱
-const el = {
+const DOM = {
+    totalSats: document.getElementById('total-sats'),
     statusText: document.getElementById('status-text'),
     statusDot: document.querySelector('.status-dot'),
-    satList: document.getElementById('sat-list'),
-    trailSlider: document.getElementById('trail-slider'),
-    trailVal: document.getElementById('trail-val'),
-    teleName: document.getElementById('tele-name'),
-    teleId: document.getElementById('tele-id'),
-    teleLat: document.getElementById('tele-lat'),
-    teleLon: document.getElementById('tele-lon'),
-    teleAlt: document.getElementById('tele-alt'),
-    teleVel: document.getElementById('tele-vel'),
-    telePeriod: document.getElementById('tele-period')
+    telemetryPanel: document.getElementById('telemetry-panel'),
+    satName: document.getElementById('sat-name'),
+    satId: document.getElementById('sat-id'),
+    satAlt: document.getElementById('sat-alt'),
+    satVel: document.getElementById('sat-vel'),
+    satCoords: document.getElementById('sat-coords'),
+    btnClear: document.getElementById('btn-clear')
 };
 
-// ================= [ 1. TLE 데이터 가져오기 (다중 프록시 폴백 시스템) ] =================
-async function fetchTLEData() {
-    setStatus("FETCHING TLE DATA...", true);
+// ================= [ 1. 빅데이터(6,000+ TLE) Fetching ] =================
+async function fetchStarlinkData() {
+    setStatus("DOWNLOADING STARLINK CONSTELLATION DATA (~1MB)...", true);
     
-    const ids = TARGET_SATELLITES.map(s => s.id).join(',');
-    const celestrakUrl = `https://celestrak.org/NORAD/elements/gp.php?CATNR=${ids}&FORMAT=tle`;
+    // Celestrak의 Starlink 전용 그룹 TLE 주소
+    const celestrakUrl = `https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle`;
     
-    // 🔥 엔지니어링 핵심: 여러 개의 공용 프록시 서버를 배열로 준비 (내결함성 설계)
+    // CORS 프록시 폴백
     const proxies = [
-        `https://corsproxy.io/?${encodeURIComponent(celestrakUrl)}`, // 1순위 프록시
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(celestrakUrl)}`, // 2순위 (기존)
-        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(celestrakUrl)}` // 3순위
+        `https://corsproxy.io/?${encodeURIComponent(celestrakUrl)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(celestrakUrl)}`
     ];
 
-    let tleText = null;
+    let rawData = null;
 
-    // 프록시 배열을 순회하며 하나라도 성공할 때까지 시도 (Fallback Loop)
-    for (const proxyUrl of proxies) {
+    for (const proxy of proxies) {
         try {
-            console.log(`[System] Trying proxy: ${proxyUrl.split('/')[2]}...`);
-            const response = await fetch(proxyUrl);
-            
-            if (response.ok) {
-                const text = await response.text();
-                // 쓰레기 데이터가 아닌, 정상적인 TLE 텍스트(최소 3줄 이상)가 왔는지 검증
-                if (text && text.split('\n').length >= 3) {
-                    tleText = text;
-                    console.log(`[System] Data fetched successfully via ${proxyUrl.split('/')[2]}`);
-                    break; // 성공했으므로 반복문 탈출!
+            console.log(`Fetching from: ${proxy}`);
+            const res = await fetch(proxy);
+            if (res.ok) {
+                const text = await res.text();
+                if (text.length > 1000) { // 스타링크 데이터는 크기가 큼
+                    rawData = text;
+                    break;
                 }
             }
-        } catch (error) {
-            console.warn(`[Warning] Proxy failed, trying next fallback...`);
+        } catch (e) {
+            console.warn("Proxy failed, trying next...");
         }
     }
 
-    // 최종 결과 처리
-    if (tleText) {
-        parseTLE(tleText);
-        initUI();
-        initGlobe();
-        setStatus("SYSTEM ONLINE", false);
-        
-        // 1초마다 궤도 렌더링 루프 시작
-        setInterval(updateSatellitePositions, 1000);
+    if (rawData) {
+        setStatus("PARSING 6000+ SGP4 MODELS...", true);
+        // 브라우저가 멈추는 것을 방지하기 위해 약간의 딜레이 후 파싱 시작
+        setTimeout(() => {
+            parseBigDataTLE(rawData);
+            initGlobe();
+            setStatus("CONSTELLATION LIVE", false);
+            
+            // 2초마다 모든 위성의 위치 업데이트 (6000개를 매 프레임 업데이트하면 CPU 터짐)
+            updateInterval = setInterval(updateAllPositions, 2000);
+        }, 100);
     } else {
-        // 모든 프록시가 실패했을 경우의 치명적 에러 처리
-        console.error("[Fatal Error] All CORS proxies failed.");
-        setStatus("ALL PROXIES BLOCKED. TRY AGAIN LATER.", false);
-        el.statusText.style.color = "red";
-        alert("현재 전 세계 무료 공용 프록시 서버가 모두 응답하지 않거나 Celestrak 서버 점검 중입니다. 5~10분 뒤에 새로고침 해주세요.");
+        setStatus("FATAL: UNABLE TO DOWNLOAD CONSTELLATION DATA", false);
     }
 }
 
-// ================= [ 2. UI 및 상호작용 초기화 ] =================
-function initUI() {
-    el.satList.innerHTML = '';
+function parseBigDataTLE(tleText) {
+    const lines = tleText.trim().split('\n');
+    let validCount = 0;
+
+    for (let i = 0; i < lines.length; i += 3) {
+        if(i + 2 >= lines.length) break;
+        const name = lines[i].trim();
+        const tleLine1 = lines[i+1].trim();
+        const tleLine2 = lines[i+2].trim();
+        
+        try {
+            const satrec = satellite.twoline2satrec(tleLine1, tleLine2);
+            const id = parseInt(tleLine2.substring(2, 7));
+            
+            starlinkData.push({ id, name, satrec });
+            validCount++;
+        } catch (e) {
+            // 오래된 데이터나 파싱 에러 발생 시 무시
+        }
+    }
     
-    TARGET_SATELLITES.forEach(sat => {
-        if(!satDataMap[sat.id]) return; // 데이터가 파싱되지 않았다면 스킵
-
-        const div = document.createElement('div');
-        div.className = `sat-item ${sat.id === activeSatId ? 'active' : ''}`;
-        div.innerHTML = `
-            <div class="sat-item-title" style="color: ${sat.color}">${sat.name}</div>
-            <div class="sat-item-desc">${sat.desc}</div>
-        `;
-        
-        div.onclick = () => {
-            document.querySelectorAll('.sat-item').forEach(el => el.classList.remove('active'));
-            div.classList.add('active');
-            activeSatId = sat.id;
-            updateSatellitePositions(); // 즉시 화면 갱신
-            focusCameraOnActive(); // 카메라 이동
-        };
-        el.satList.appendChild(div);
-    });
-
-    el.trailSlider.addEventListener('input', (e) => {
-        orbitTrailMinutes = parseInt(e.target.value);
-        el.trailVal.textContent = `±${orbitTrailMinutes} Minutes`;
-        updateSatellitePositions();
-    });
+    DOM.totalSats.textContent = validCount.toLocaleString();
+    DOM.totalSats.classList.remove('loading-pulse');
+    console.log(`[System] Successfully parsed ${validCount} satellites.`);
 }
 
-function setStatus(text, isLoading) {
-    el.statusText.textContent = text;
-    if(isLoading) {
-        el.statusDot.classList.add('loading');
-        el.statusText.style.color = "var(--color-accent-gold)";
-    } else {
-        el.statusDot.classList.remove('loading');
-        el.statusText.style.color = "var(--color-status-green)";
-    }
+function setStatus(msg, isLoading) {
+    DOM.statusText.textContent = msg;
+    DOM.statusDot.style.backgroundColor = isLoading ? "var(--color-accent-gold)" : "var(--color-status-green)";
+    if(isLoading) DOM.statusText.style.color = "var(--color-accent-gold)";
+    else DOM.statusText.style.color = "var(--color-status-green)";
 }
 
-// ================= [ 3. 3D Globe.gl 엔진 초기화 ] =================
+// ================= [ 2. Globe.gl 하드웨어 가속 렌더링 ] =================
 function initGlobe() {
     const container = document.getElementById('globeViz');
     
     world = Globe()(container)
-        .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+        .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-dark.jpg') // 어두운 테마가 수천 개의 위성을 보기에 좋음
         .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
         .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
         .showAtmosphere(true)
-        .atmosphereColor('#3a7bd5')
-        .atmosphereAltitude(0.15)
+        .atmosphereColor('#1e90ff')
         
-        // 3D 객체(위성 본체) 렌더링 설정
-        .customLayerData([])
-        .customThreeObject(d => {
-            const isTarget = d.id === activeSatId;
-            // 활성화된 위성은 크고 밝게, 나머지는 작게
-            const size = isTarget ? 1.5 : 0.5;
-            const geo = new THREE.SphereGeometry(size, 16, 16);
-            const mat = new THREE.MeshBasicMaterial({ color: d.color });
-            return new THREE.Mesh(geo, mat);
-        })
-        .customThreeObjectUpdate((obj, d) => {
-            Object.assign(obj.position, world.getCoords(d.lat, d.lng, d.alt));
-        });
+        // 1. 군집 위성 점(Point) 렌더링: 매우 빠름
+        .pointAltitude(d => d.alt)
+        .pointColor(d => d.id === selectedSat?.id ? '#00ffcc' : 'rgba(255, 255, 255, 0.6)')
+        .pointRadius(d => d.id === selectedSat?.id ? 0.05 : 0.01) // 선택된 건 크게
+        .pointResolution(8)
+        .onPointClick(handleSatelliteClick) // 위성 클릭 이벤트
+        
+        // 2. 선택된 위성의 통신 커버리지 (Ring) 렌더링
+        .ringsData([])
+        .ringColor(() => 'rgba(0, 255, 204, 0.3)')
+        .ringMaxRadius(d => d.coverage) // 고도 기반 커버리지
+        .ringPropagationSpeed(0)
+        .ringRepeatPeriod(0)
+        
+        // 3. 선택된 위성의 미래/과거 궤적 (Path) 렌더링
+        .pathsData([])
+        .pathColor(() => '#d4af37')
+        .pathStroke(1.5)
+        .pathDashLength(0.01)
+        .pathDashGap(0.01)
+        .pathDashAnimateTime(5000);
 
-    focusCameraOnActive();
-    updateSatellitePositions();
+    // 초기 시점 설정
+    world.pointOfView({ altitude: 2.5 });
+    
+    // 첫 데이터 주입
+    updateAllPositions();
 }
 
-function focusCameraOnActive() {
-    if(!world) return;
+// ================= [ 3. 물리 연산 및 최적화 ] =================
+
+function updateAllPositions() {
     const now = new Date();
-    const pos = calculateSGP4(satDataMap[activeSatId].satrec, now);
-    // 선택한 위성의 위치로 카메라를 부드럽게 이동 (고도는 위성 고도의 2배 정도)
-    world.pointOfView({ lat: pos.lat, lng: pos.lon, altitude: Math.max(1.5, pos.alt + 0.5) }, 1000);
-}
+    const points = [];
 
-// ================= [ 4. SGP4 궤도 물리 연산 및 렌더링 ] =================
-function updateSatellitePositions() {
-    if(!world) return;
-    const now = new Date();
-    const currentPositions = [];
-    let pathData = [];
+    // 6000개 위성의 현재 위치 연산 (2초마다 실행됨)
+    for (const sat of starlinkData) {
+        const posAndVel = satellite.propagate(sat.satrec, now);
+        if(!posAndVel.position) continue;
 
-    TARGET_SATELLITES.forEach(satInfo => {
-        const satData = satDataMap[satInfo.id];
-        if(!satData) return;
-
-        // 1. 현재 위치 계산
-        const pos = calculateSGP4(satData.satrec, now);
-        if(!pos) return;
+        const gmst = satellite.gstime(now);
+        const posGd = satellite.eciToGeodetic(posAndVel.position, gmst);
         
-        currentPositions.push({
-            id: satInfo.id, name: satInfo.name, color: satInfo.color,
-            lat: pos.lat, lng: pos.lon, alt: pos.alt // alt는 지구 반경 비율로 정규화됨
-        });
+        const lat = satellite.degreesLat(posGd.latitude);
+        const lng = satellite.degreesLong(posGd.longitude);
+        const altRatio = posGd.height / 6371; // 지구 반경 대비 비율
 
-        // 2. 텔레메트리 UI 업데이트 (활성화된 위성만)
-        if(satInfo.id === activeSatId) {
-            updateTelemetryUI(satInfo, pos, satData.periodMinutes);
-            
-            // 3. 궤적(Trail) 계산 (과거부터 미래까지)
-            const trajectory = [];
-            for(let i = -orbitTrailMinutes; i <= orbitTrailMinutes; i+=2) {
-                const timePoint = new Date(now.getTime() + i * 60000);
-                const p = calculateSGP4(satData.satrec, timePoint);
-                if(p) trajectory.push([p.lat, p.lon, p.alt]);
-            }
-            pathData.push({ path: trajectory, color: satInfo.color });
+        points.push({ id: sat.id, name: sat.name, lat, lng, alt: altRatio, rawAlt: posGd.height, vel: posAndVel.velocity });
+        
+        // 선택된 위성이면 텔레메트리 업데이트
+        if (selectedSat && sat.id === selectedSat.id) {
+            updateSelectedTelemetry(sat.name, sat.id, posGd.height, posAndVel.velocity, lat, lng);
+            updateSelectedVisuals(sat, posGd.height);
         }
-    });
+    }
 
-    // Globe.gl 데이터 갱신
-    world.customLayerData(currentPositions);
+    // Globe에 대규모 점 데이터 주입
+    world.pointsData(points);
+}
+
+// 위성 클릭 시 실행
+function handleSatelliteClick(point) {
+    // 원본 데이터를 찾아 선택
+    selectedSat = starlinkData.find(s => s.id === point.id);
+    DOM.telemetryPanel.style.display = 'block';
     
-    world.pathsData(pathData)
-         .pathColor(d => d.color)
-         .pathPointAlt(p => p[2])
-         .pathStroke(2)
-         .pathDashLength(0.01)
-         .pathDashGap(0.005)
-         .pathDashAnimateTime(10000); // 궤적이 흐르는 애니메이션 효과
-}
-
-// 핵심 수학 함수: 시간(date)을 넣으면 위도/경도/고도/속도를 반환
-function calculateSGP4(satrec, date) {
-    const positionAndVelocity = satellite.propagate(satrec, date);
-    if(!positionAndVelocity.position) return null;
-
-    const gmst = satellite.gstime(date);
-    const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
+    // 즉시 화면 강제 업데이트
+    updateAllPositions(); 
     
-    const v = positionAndVelocity.velocity;
-    const velocityKmS = Math.sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
-
-    return {
-        lat: satellite.degreesLat(positionGd.latitude),
-        lon: satellite.degreesLong(positionGd.longitude),
-        altRaw: positionGd.height, // 실제 고도 (km)
-        alt: positionGd.height / 6371, // Globe.gl용 고도 (지구 반경 비율)
-        vel: velocityKmS
-    };
+    // 카메라를 선택한 위성으로 부드럽게 이동
+    world.pointOfView({ lat: point.lat, lng: point.lng, altitude: point.alt + 1 }, 1000);
 }
 
-function updateTelemetryUI(satInfo, pos, period) {
-    el.teleName.textContent = satInfo.name;
-    el.teleName.style.color = satInfo.color;
-    el.teleId.textContent = satInfo.id;
-    el.teleLat.textContent = `${Math.abs(pos.lat).toFixed(4)}° ${pos.lat >= 0 ? 'N' : 'S'}`;
-    el.teleLon.textContent = `${Math.abs(pos.lon).toFixed(4)}° ${pos.lon >= 0 ? 'E' : 'W'}`;
-    el.teleAlt.textContent = `${pos.altRaw.toFixed(1)} km`;
-    el.teleVel.textContent = `${pos.vel.toFixed(2)} km/s`;
-    el.telePeriod.textContent = `${period.toFixed(1)} mins`;
+// 선택 해제 버튼
+DOM.btnClear.addEventListener('click', () => {
+    selectedSat = null;
+    DOM.telemetryPanel.style.display = 'none';
+    world.ringsData([]); // 커버리지 지우기
+    world.pathsData([]); // 궤적 지우기
+    updateAllPositions(); // 색상 원래대로
+});
+
+// 선택된 위성만을 위한 고부하 연산 (궤적 및 커버리지 반경)
+function updateSelectedVisuals(sat, altitudeKm) {
+    const now = new Date();
+    const trajectory = [];
+    
+    // 앞뒤 60분 (총 120분) 궤적 계산
+    for(let i = -60; i <= 60; i += 2) {
+        const time = new Date(now.getTime() + i * 60000);
+        const p = satellite.propagate(sat.satrec, time);
+        if(!p.position) continue;
+        const gmst = satellite.gstime(time);
+        const posGd = satellite.eciToGeodetic(p.position, gmst);
+        trajectory.push([
+            satellite.degreesLat(posGd.latitude),
+            satellite.degreesLong(posGd.longitude),
+            posGd.height / 6371
+        ]);
+    }
+
+    world.pathsData([{ path: trajectory }]);
+
+    // 통신 커버리지 계산 (간단한 수학적 근사: 고도가 높을수록 커버리지가 넓어짐)
+    // Starlink의 가시 반경은 보통 수백 km. 이를 각도(Degree)로 변환
+    const earthRadiusKm = 6371;
+    const coverageAngle = Math.acos(earthRadiusKm / (earthRadiusKm + altitudeKm)) * (180 / Math.PI);
+    
+    // 현재 위치에 반투명 링 렌더링
+    const currentPos = trajectory[30]; // 현재 시간 인덱스 (대략 중간)
+    if(currentPos) {
+        world.ringsData([{ 
+            lat: currentPos[0], 
+            lng: currentPos[1], 
+            coverage: coverageAngle * 0.8 // 링 크기 적용
+        }]);
+    }
 }
+
+// UI 텍스트 렌더링
+function updateSelectedTelemetry(name, id, alt, vel, lat, lng) {
+    DOM.satName.textContent = name;
+    DOM.satId.textContent = id;
+    DOM.satAlt.textContent = `${alt.toFixed(1)} km`;
+    
+    const speedKmS = Math.sqrt(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z);
+    DOM.satVel.textContent = `${speedKmS.toFixed(2)} km/s`;
+    
+    DOM.satCoords.textContent = `${Math.abs(lat).toFixed(2)}°${lat >= 0 ? 'N':'S'}, ${Math.abs(lng).toFixed(2)}°${lng >= 0 ? 'E':'W'}`;
+}
+
+// 창 크기 변경 대응
+window.addEventListener('resize', () => {
+    world.width(window.innerWidth);
+    world.height(window.innerHeight);
+});
 
 // 런타임 시작
-window.onload = fetchTLEData;
+window.onload = fetchStarlinkData;
