@@ -32,22 +32,44 @@ const el = {
     telePeriod: document.getElementById('tele-period')
 };
 
-// ================= [ 1. TLE 데이터 가져오기 (CORS 우회) ] =================
+// ================= [ 1. TLE 데이터 가져오기 (다중 프록시 폴백 시스템) ] =================
 async function fetchTLEData() {
     setStatus("FETCHING TLE DATA...", true);
     
-    // 여러 NORAD ID를 콤마로 연결하여 한 번에 Celestrak에 요청
     const ids = TARGET_SATELLITES.map(s => s.id).join(',');
     const celestrakUrl = `https://celestrak.org/NORAD/elements/gp.php?CATNR=${ids}&FORMAT=tle`;
     
-    // 프론트엔드 단독 실행을 위해 allorigins 프록시 사용
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(celestrakUrl)}`;
+    // 🔥 엔지니어링 핵심: 여러 개의 공용 프록시 서버를 배열로 준비 (내결함성 설계)
+    const proxies = [
+        `https://corsproxy.io/?${encodeURIComponent(celestrakUrl)}`, // 1순위 프록시
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(celestrakUrl)}`, // 2순위 (기존)
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(celestrakUrl)}` // 3순위
+    ];
 
-    try {
-        const response = await fetch(proxyUrl);
-        if(!response.ok) throw new Error("Network response was not ok");
-        const tleText = await response.text();
-        
+    let tleText = null;
+
+    // 프록시 배열을 순회하며 하나라도 성공할 때까지 시도 (Fallback Loop)
+    for (const proxyUrl of proxies) {
+        try {
+            console.log(`[System] Trying proxy: ${proxyUrl.split('/')[2]}...`);
+            const response = await fetch(proxyUrl);
+            
+            if (response.ok) {
+                const text = await response.text();
+                // 쓰레기 데이터가 아닌, 정상적인 TLE 텍스트(최소 3줄 이상)가 왔는지 검증
+                if (text && text.split('\n').length >= 3) {
+                    tleText = text;
+                    console.log(`[System] Data fetched successfully via ${proxyUrl.split('/')[2]}`);
+                    break; // 성공했으므로 반복문 탈출!
+                }
+            }
+        } catch (error) {
+            console.warn(`[Warning] Proxy failed, trying next fallback...`);
+        }
+    }
+
+    // 최종 결과 처리
+    if (tleText) {
         parseTLE(tleText);
         initUI();
         initGlobe();
@@ -55,33 +77,12 @@ async function fetchTLEData() {
         
         // 1초마다 궤도 렌더링 루프 시작
         setInterval(updateSatellitePositions, 1000);
-
-    } catch (error) {
-        console.error("TLE Fetch Error:", error);
-        setStatus("DATA FETCH FAILED (CORS/NETWORK)", false);
+    } else {
+        // 모든 프록시가 실패했을 경우의 치명적 에러 처리
+        console.error("[Fatal Error] All CORS proxies failed.");
+        setStatus("ALL PROXIES BLOCKED. TRY AGAIN LATER.", false);
         el.statusText.style.color = "red";
-    }
-}
-
-// 텍스트 형태의 TLE를 줄 단위로 읽어 satellite.js 모델로 변환
-function parseTLE(tleText) {
-    const lines = tleText.trim().split('\n');
-    for (let i = 0; i < lines.length; i += 3) {
-        const name = lines[i].trim();
-        const tleLine1 = lines[i+1].trim();
-        const tleLine2 = lines[i+2].trim();
-        
-        // NORAD ID 추출 (Line 2의 첫 번째 단어 2번째 문자부터)
-        const id = parseInt(tleLine2.substring(2, 7));
-        
-        // SGP4 모델 객체(satrec) 생성
-        const satrec = satellite.twoline2satrec(tleLine1, tleLine2);
-        
-        // 공전 주기 계산 (Mean Motion: 하루에 도는 횟수)
-        const meanMotion = parseFloat(tleLine2.substring(52, 63));
-        const periodMinutes = 1440 / meanMotion;
-
-        satDataMap[id] = { name, satrec, periodMinutes };
+        alert("현재 전 세계 무료 공용 프록시 서버가 모두 응답하지 않거나 Celestrak 서버 점검 중입니다. 5~10분 뒤에 새로고침 해주세요.");
     }
 }
 
