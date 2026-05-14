@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAFS Grand Observatory V16.0 (Ultimate Edition)</title>
+    <title>HAFS Grand Observatory V16.1 (Absolute Edition)</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
@@ -36,7 +36,7 @@
             <h2>SELECT EXPLORATION MODULE</h2>
             <p>탐구할 우주 스케일을 선택하세요.</p>
         </div>
-        <div class="module-cards">
+        <div class="module-cards" style="display: flex; flex-wrap: wrap; justify-content: center; max-width: 1200px;">
             <div class="module-card" data-module="deepspace">
                 <div class="card-bg" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/4f/Black_hole_-_Messier_87_crop_max_res.jpg');"></div>
                 <div class="card-content">
@@ -70,7 +70,7 @@
                 </div>
             </div>
             <div class="module-card" data-module="stellar">
-                <div class="card-bg" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Eta_Carinae_Nebula_1.jpg/800px-Eta_Carinae_Nebula_1.jpg');"></div>
+                <div class="card-bg" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/6/6b/Eta_Carinae_Nebula_1.jpg');"></div>
                 <div class="card-content">
                     <span class="module-tag" style="color: #ff9944; border-color: #ff9944;">MODULE 05</span>
                     <h3>STELLAR LIFECYCLE</h3>
@@ -154,7 +154,7 @@
         </div>
         <div class="hud-panel right-hud" id="pr-info" style="opacity: 0;">
             <h2 id="pr-name" style="color: #a277ff; font-size:24px;">PROBE</h2>
-            <div id="pr-media" class="media-box" style="height: 140px; background-size: contain; background-color: #050505;"></div>
+            <div id="pr-media" class="media-box" style="height: 140px; background-size: contain; background-repeat: no-repeat; background-position: center; background-color: #050505;"></div>
             <div class="data-grid" style="margin-top: 15px; border-left-color: #a277ff;">
                 <div class="data-cell"><span>LAUNCH YEAR</span><span id="pr-launch" class="mono-data" style="color:#fff;">--</span></div>
                 <div class="data-cell"><span>PRIMARY TARGET</span><span id="pr-target" class="mono-data" style="color:#a277ff;">--</span></div>
@@ -189,9 +189,7 @@
                 <div class="telemetry-row"><span>COSMIC EPOCH (시대)</span><span id="gn-epoch" class="mono-data" style="color: #fff; font-size: 14px;">SINGULARITY</span></div>
                 <div class="telemetry-row"><span>ESTIMATED AGE</span><span id="gn-age" class="mono-data" style="color: #ffaa00;">0 Years</span></div>
                 <div class="telemetry-row"><span>AVERAGE TEMP</span><span id="gn-temp" class="mono-data" style="color: #ff5555;">∞ K</span></div>
-                <div class="telemetry-row" style="border-top: 1px dashed rgba(255,170,0,0.3); padding-top:10px; margin-top:5px;">
-                    <span>UNIVERSE SIZE</span><span id="gn-size" class="mono-data" style="color: #64ffda;">--</span>
-                </div>
+                <div class="telemetry-row" style="border-top: 1px dashed rgba(255,170,0,0.3); padding-top:10px; margin-top:5px;"><span>UNIVERSE SIZE</span><span id="gn-size" class="mono-data" style="color: #64ffda;">--</span></div>
                 <div class="telemetry-row"><span>DOMINANT FORCE/COMP.</span><span id="gn-comp" class="mono-data" style="color: #a277ff;">--</span></div>
                 <div class="telemetry-row"><span>COSMIC REDSHIFT (z)</span><span id="gn-redshift" class="mono-data" style="color: #fff;">--</span></div>
             </div>
