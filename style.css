@@ -1,30 +1,118 @@
-/* MODULE 05 - STELLAR LIFECYCLE */
-.hr-point { transition: all 0.3s ease; }
-.hr-axis { stroke: rgba(255,255,255,0.3); stroke-width: 1; }
-.hr-text { fill: var(--color-text-secondary); font-family: var(--font-data); font-size: 10px; }
+/* =========================================
+   HAFS Grand Observatory - Luxury Premium Edition
+   Design & Developed by 10621 이정욱
+   ========================================= */
 
-/* MODULE 06 - EXOPLANET HUNTER */
-.esi-bar { transition: width 0.5s ease; border-radius: 2px; }
-.lc-line { fill: none; stroke: var(--color-module-ss); stroke-width: 2; transition: all 0.1s linear; }
+:root {
+    --color-bg-main: #020204; 
+    --color-text-primary: #f0f0f0;
+    --color-text-secondary: #9ba4b5;
+    --color-accent-gold: #e6c27a; 
+    --color-accent-gold-dim: rgba(230, 194, 122, 0.2);
+    --color-hud-bg: rgba(10, 14, 22, 0.65);
+    --font-heading: 'Playfair Display', serif; 
+    --font-data: 'Roboto Mono', monospace;     
+}
 
-/* MODULE 08 - OBSERVATORY HISTORY */
-.obs-timeline-item { 
-    position: relative; cursor: pointer; padding: 10px; border-radius: 4px; 
-    background: rgba(255,255,255,0.02); transition: all 0.3s ease; border: 1px solid transparent;
-}
-.obs-timeline-item:hover { background: rgba(170,255,204,0.1); border-color: rgba(170,255,204,0.3); }
-.obs-timeline-item.active { background: rgba(170,255,204,0.15); border-color: var(--color-module-pr); }
-.obs-timeline-item::before {
-    content: ''; position: absolute; left: -21px; top: 18px; width: 10px; height: 10px; 
-    border-radius: 50%; background: var(--color-hud-bg); border: 2px solid rgba(170,255,204,0.5);
-    transition: all 0.3s ease;
-}
-.obs-timeline-item.active::before { background: var(--color-module-pr); border-color: #fff; box-shadow: 0 0 10px var(--color-module-pr); }
-.obs-year { font-family: var(--font-data); font-size: 11px; color: var(--color-module-pr); font-weight: bold; }
-.obs-title { font-family: var(--font-heading); font-size: 14px; color: #fff; margin-top: 4px; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background-color: var(--color-bg-main); color: var(--color-text-primary); font-family: 'Roboto', sans-serif; overflow: hidden; letter-spacing: 0.5px; }
 
-.filter-btn { 
-    background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--color-text-secondary); 
-    padding: 4px 10px; font-family: var(--font-data); font-size: 9px; cursor: pointer; border-radius: 12px; transition: 0.3s; 
-}
-.filter-btn:hover, .filter-btn.active { background: rgba(170,255,204,0.2); color: #fff; border-color: #aaffcc; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(230, 194, 122, 0.3); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-accent-gold); }
+
+.fullscreen-viz { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
+.global-header { position: absolute; top: 0; left: 0; width: 100%; z-index: 100; padding: 25px 50px; background: linear-gradient(to bottom, rgba(2,2,4,0.95) 0%, rgba(2,2,4,0.6) 60%, transparent 100%); pointer-events: none; }
+.header-container { width: 100%; max-width: 1600px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; pointer-events: auto;}
+
+.header-left { display: flex; align-items: center; gap: 20px; }
+.hafs-logo { font-family: var(--font-heading); font-size: 26px; color: var(--color-accent-gold); border: 1.5px solid var(--color-accent-gold); padding: 6px 18px; letter-spacing: 3px; height: fit-content; align-self: center; background: rgba(230, 194, 122, 0.05); box-shadow: 0 4px 15px rgba(230, 194, 122, 0.1); }
+.author-badge { display: flex; flex-direction: column; justify-content: center; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 20px; height: 38px; }
+.badge-role { font-family: var(--font-data); font-size: 9px; color: var(--color-accent-gold); letter-spacing: 2px; margin-bottom: 4px; }
+.badge-name { font-family: 'Roboto', sans-serif; font-size: 14px; font-weight: 400; color: #fff; letter-spacing: 3px; }
+
+.title-group { text-align: center; position: absolute; left: 50%; transform: translateX(-50%); }
+.title-group h1 { font-family: var(--font-heading); font-size: 20px; letter-spacing: 4px; font-weight: normal; color: #fff; margin-bottom: 5px;}
+.title-group p { font-size: 11px; color: var(--color-text-secondary); letter-spacing: 1px; font-family: var(--font-data);}
+
+.theme-btn { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.3); color: var(--color-text-primary); padding: 10px 20px; font-family: var(--font-data); font-size: 11px; letter-spacing: 1px; cursor: pointer; transition: all 0.4s ease; }
+.theme-btn:hover { background: var(--color-accent-gold); color: #000; border-color: var(--color-accent-gold) !important; box-shadow: 0 0 20px rgba(230, 194, 122, 0.4);}
+
+.lobby-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 50; display: flex; flex-direction: column; justify-content: center; align-items: center; background: radial-gradient(circle at center, rgba(10,14,22,0.7) 0%, rgba(2,2,4,0.95) 100%); backdrop-filter: blur(15px); transition: opacity 0.8s ease; }
+.welcome-text { text-align: center; margin-bottom: 40px; margin-top: 30px;}
+.welcome-text h2 { font-family: var(--font-heading); font-size: 32px; color: #fff; letter-spacing: 5px; margin-bottom: 15px; font-weight: normal;}
+.welcome-text p { color: var(--color-accent-gold); font-size: 13px; letter-spacing: 2px; font-family: var(--font-data);}
+
+/* 5개의 카드를 위해 flex-wrap 적용 */
+.module-cards { display: flex; gap: 30px; max-width: 1200px; width: 95%; flex-wrap: wrap; justify-content: center; align-items: center;}
+.module-card { flex: 1 1 300px; max-width: 350px; background: rgba(20, 25, 35, 0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; cursor: pointer; transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+.module-card:hover { transform: translateY(-8px); border-color: var(--color-accent-gold); box-shadow: 0 20px 50px rgba(230, 194, 122, 0.15); }
+.module-card .card-bg { height: 160px; background-size: cover; background-position: center; border-bottom: 1px solid rgba(255,255,255,0.05); transition: 0.8s; position: relative;}
+.module-card .card-bg::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, transparent 0%, rgba(20,25,35,1) 100%);}
+.module-card:hover .card-bg { transform: scale(1.05); }
+
+.card-content { padding: 25px; position: relative; z-index: 2; background: rgba(20,25,35,1); margin-top: -20px;}
+.module-tag { font-family: var(--font-data); font-size: 10px; font-weight: normal; letter-spacing: 1px; border-bottom: 1px solid; padding-bottom: 5px; display: inline-block; margin-bottom: 15px; }
+.card-content h3 { font-family: var(--font-heading); font-size: 18px; margin-bottom: 10px; color: #fff; letter-spacing: 1px; font-weight: normal;}
+.card-content p { font-size: 12px; color: var(--color-text-secondary); line-height: 1.6; margin-bottom: 20px; height: 40px; font-weight: 300;}
+.launch-text { font-family: var(--font-data); font-size: 11px; letter-spacing: 2px; color: var(--color-accent-gold); opacity: 0.5; transition: 0.4s; }
+.module-card:hover .launch-text { opacity: 1; padding-left: 10px; }
+
+.lobby-footer { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); font-family: var(--font-data); font-size: 10px; color: rgba(255,255,255,0.2); letter-spacing: 4px; pointer-events: none; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;}
+
+.module-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none;}
+.hud-panel { position: absolute; bottom: 50px; pointer-events: auto; background: var(--color-hud-bg); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 35px 30px; width: 380px; box-shadow: 0 20px 50px rgba(0,0,0,0.7); transition: opacity 0.6s ease; }
+.hud-panel::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(90deg, transparent, var(--color-accent-gold), transparent); opacity: 0.5;}
+.hud-panel h2 { font-family: var(--font-heading); font-size: 16px; margin-bottom: 8px; letter-spacing: 2px; font-weight: normal;}
+.hud-desc { font-size: 12px; color: var(--color-text-secondary); line-height: 1.6; font-weight: 300;}
+.left-hud { left: 50px; top: 130px; bottom: auto; max-height: calc(100vh - 180px); overflow-y: auto;}
+.right-hud { right: 50px; width: 440px; max-height: 85vh; overflow-y: auto; padding-right: 25px;}
+
+.detail-box { background: rgba(0,0,0,0.3); padding: 15px; font-size: 12px; color: #d0d0d0; line-height: 1.7; margin-bottom: 20px; border-left: 1px solid var(--color-text-secondary); font-weight: 300;}
+
+.target-list, .planet-list { display: flex; flex-direction: column; gap: 6px; margin-top: 20px; }
+.target-btn { background: transparent; border: 1px solid rgba(255,255,255,0.05); padding: 14px 18px; cursor: pointer; text-align: left; transition: all 0.4s ease; display: flex; flex-direction: column; gap: 5px; color: #fff; border-left: 2px solid transparent;}
+.target-btn:hover { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.2); border-left-color: var(--color-accent-gold); padding-left: 25px;}
+.target-btn.active { background: linear-gradient(90deg, var(--color-accent-gold-dim), transparent); border-color: rgba(230, 194, 122, 0.3); border-left: 2px solid var(--color-accent-gold) !important; padding-left: 25px;}
+.btn-title { font-family: var(--font-data); font-weight: normal; font-size: 12px; letter-spacing: 1px;}
+
+.section-title { font-family: var(--font-data); font-size: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 15px; color: #fff; margin-top: 25px; letter-spacing: 2px; opacity: 0.8;}
+.mono-data { font-family: var(--font-data); font-weight: normal; letter-spacing: 1px;}
+.telemetry-row { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--color-text-secondary); padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+.control-group label { display: block; font-size: 10px; color: var(--color-text-secondary); margin-bottom: 8px; letter-spacing: 1px; font-family: var(--font-data);}
+.control-group input[type="range"] { width: 100%; margin-bottom: 5px; height: 2px; -webkit-appearance: none; appearance: none; background: rgba(255,255,255,0.2); outline: none;}
+.control-group input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; background: #fff; cursor: pointer; border-radius: 50%; box-shadow: 0 0 5px rgba(255,255,255,0.8);}
+.control-group input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; background: #fff; cursor: pointer; border-radius: 50%; border: none; box-shadow: 0 0 5px rgba(255,255,255,0.8);}
+
+.media-box { width: 100%; height: 200px; background-size: cover; background-position: center; border: 1px solid rgba(255,255,255,0.1); position: relative; margin-top: 20px; margin-bottom: 20px; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);}
+.media-box::after { content: 'NASA PUBLIC DOMAIN'; position: absolute; bottom: 8px; right: 8px; font-family: var(--font-data); font-size: 8px; letter-spacing: 1px; background: rgba(0,0,0,0.6); padding: 4px 8px; color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.1);}
+
+.data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px;}
+.data-cell { display: flex; flex-direction: column; gap: 8px; font-size: 10px; color: var(--color-text-secondary); background: rgba(10,14,22,1); padding: 15px;}
+.data-cell span:first-child { font-family: var(--font-data); letter-spacing: 1px; font-size: 9px; opacity: 0.7;}
+
+.comp-bar { display: flex; height: 8px; background: rgba(0,0,0,0.5); margin-top: 10px; border: 1px solid rgba(255,255,255,0.1);}
+.comp-segment { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0px; transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);}
+.comp-legend { display: flex; gap: 15px; font-size: 10px; color: #aaa; margin-top: 15px; flex-wrap: wrap; font-family: var(--font-data);}
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-color { width: 8px; height: 8px; border-radius: 50%; }
+
+.internal-bar { display: flex; flex-direction: column; width: 100%; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); }
+.internal-segment { width: 100%; display: flex; justify-content: flex-end; align-items: flex-end; font-family: var(--font-data); font-size: 9px; color: rgba(255,255,255,0.8); padding: 5px; border-bottom: 1px solid rgba(255,255,255,0.05); transition: 0.8s ease; }
+
+.moon-list { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05);}
+.moon-btn { background: rgba(10,14,22,1); padding: 12px; color: var(--color-text-secondary); font-family: var(--font-data); font-size: 10px; letter-spacing: 1px; cursor: pointer; transition: 0.3s; text-align: center; border: none;}
+.moon-btn:hover, .moon-btn.active { background: rgba(255,255,255,0.05); color: #fff;}
+
+.sub-list { list-style: none; display: flex; flex-direction: column; gap: 1px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05);}
+.sub-list li { background: rgba(10,14,22,1); padding: 15px; }
+.sub-title { display: block; font-family: var(--font-data); font-size: 11px; color: #fff; margin-bottom: 6px; letter-spacing: 1px; }
+.sub-detail { font-size: 12px; color: var(--color-text-secondary); line-height: 1.6; font-weight: 300;}
+
+/* MODULE 05 - STELLAR LIFECYCLE HR DIAGRAM STYLES */
+.hr-axis { stroke: rgba(255,255,255,0.2); stroke-width: 1; }
+.hr-grid { stroke: rgba(255,255,255,0.05); stroke-width: 1; stroke-dasharray: 2,2; }
+.hr-text { fill: var(--color-text-secondary); font-family: var(--font-data); font-size: 9px; }
+.hr-dot { transition: cx 0.1s linear, cy 0.1s linear; }
