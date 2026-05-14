@@ -44,7 +44,6 @@ body { background-color: var(--color-bg-main); color: var(--color-text-primary);
 .welcome-text h2 { font-family: var(--font-heading); font-size: 32px; color: #fff; letter-spacing: 5px; margin-bottom: 15px; font-weight: normal;}
 .welcome-text p { color: var(--color-accent-gold); font-size: 13px; letter-spacing: 2px; font-family: var(--font-data);}
 
-/* 5개의 카드를 위해 flex-wrap 적용 */
 .module-cards { display: flex; gap: 30px; max-width: 1200px; width: 95%; flex-wrap: wrap; justify-content: center; align-items: center;}
 .module-card { flex: 1 1 300px; max-width: 350px; background: rgba(20, 25, 35, 0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; cursor: pointer; transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 .module-card:hover { transform: translateY(-8px); border-color: var(--color-accent-gold); box-shadow: 0 20px 50px rgba(230, 194, 122, 0.15); }
@@ -86,7 +85,8 @@ body { background-color: var(--color-bg-main); color: var(--color-text-primary);
 .control-group input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; background: #fff; cursor: pointer; border-radius: 50%; box-shadow: 0 0 5px rgba(255,255,255,0.8);}
 .control-group input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; background: #fff; cursor: pointer; border-radius: 50%; border: none; box-shadow: 0 0 5px rgba(255,255,255,0.8);}
 
-.media-box { width: 100%; height: 200px; background-size: cover; background-position: center; border: 1px solid rgba(255,255,255,0.1); position: relative; margin-top: 20px; margin-bottom: 20px; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);}
+/* 오류 해결: 배경 이미지가 반복되지 않게 글로벌 세팅 */
+.media-box { width: 100%; height: 200px; background-size: cover; background-position: center; background-repeat: no-repeat; border: 1px solid rgba(255,255,255,0.1); position: relative; margin-top: 20px; margin-bottom: 20px; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);}
 .media-box::after { content: 'NASA PUBLIC DOMAIN'; position: absolute; bottom: 8px; right: 8px; font-family: var(--font-data); font-size: 8px; letter-spacing: 1px; background: rgba(0,0,0,0.6); padding: 4px 8px; color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.1);}
 
 .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px;}
