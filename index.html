@@ -1,84 +1,138 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAFS Starlink Tracker V5.0</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    
-    <!-- 3D 엔진 및 궤도 연산 라이브러리 -->
-    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/globe.gl"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.1.3/satellite.min.js"></script>
-</head>
-<body class="dark-mode">
-
-    <!-- 3D 지도가 전체 화면을 덮습니다 -->
-    <div id="globeViz" class="fullscreen-viz"></div>
-
-    <header class="hud-header">
-        <div class="hafs-logo">HAFS</div>
-        <div class="title-group">
-            <h1>MEGA-CONSTELLATION TRACKER</h1>
-            <p>Live Starlink Network Topology & Global Coverage</p>
-        </div>
-    </header>
-
-    <!-- 좌측 상단: 전체 네트워크 상태 (Big Data Stats) -->
-    <div class="hud-panel left-panel">
-        <h2>NETWORK STATUS</h2>
-        <div class="stat-box">
-            <label>ACTIVE SATELLITES</label>
-            <span id="total-sats" class="mono-data special-text loading-pulse">Loading...</span>
-        </div>
-        <div class="stat-box">
-            <label>DATA SOURCE</label>
-            <span class="mono-data">CELESTRAK (NORAD GP)</span>
-        </div>
-        <div class="stat-box">
-            <label>COMPUTATION MODEL</label>
-            <span class="mono-data">SGP4 (Browser CPU)</span>
-        </div>
-        <p class="hud-desc" style="margin-top: 15px;">
-            지도 위의 하얀 점들은 현재 지구를 덮고 있는 실제 스타링크 위성들입니다. <br>
-            <b>위성을 클릭</b>하여 상세 궤도와 통신 커버리지를 확인하세요.
-        </p>
+<div class="module-card" data-module="stellar">
+    <div class="card-bg" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Eta_Carinae_Nebula_1.jpg/800px-Eta_Carinae_Nebula_1.jpg');"></div>
+    <div class="card-content">
+        <span class="module-tag" style="color: #ff9944; border-color: #ff9944;">MODULE 05</span>
+        <h3>STELLAR LIFECYCLE</h3>
+        <p>항성의 질량에 따른 탄생부터 죽음까지의 진화 과정을 HR도와 함께 시각화합니다.</p>
+        <span class="launch-text">▶ LAUNCH ENGINE</span>
     </div>
+</div>
+<div class="module-card" data-module="exoplanet">
+    <div class="card-bg" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Trappist-1_system_artwork.jpg/800px-Trappist-1_system_artwork.jpg');"></div>
+    <div class="card-content">
+        <span class="module-tag" style="color: #64ffda; border-color: #64ffda;">MODULE 06</span>
+        <h3>EXOPLANET HUNTER</h3>
+        <p>외계 행성계의 생명체 거주 가능 구역(Habitable Zone)과 천체면 통과(Transit) 현상을 분석합니다.</p>
+        <span class="launch-text">▶ LAUNCH ENGINE</span>
+    </div>
+</div>
+<div class="module-card" data-module="collision">
+    <div class="card-bg" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Antennae_Galaxies_composite_of_ALMA_and_Hubble_observations.jpg/800px-Antennae_Galaxies_composite_of_ALMA_and_Hubble_observations.jpg');"></div>
+    <div class="card-content">
+        <span class="module-tag" style="color: #ff66aa; border-color: #ff66aa;">MODULE 07</span>
+        <h3>COSMIC COLLISION</h3>
+        <p>우리은하와 안드로메다 은하의 수십억 년에 걸친 장대한 충돌 및 병합 과정을 시뮬레이션합니다.</p>
+        <span class="launch-text">▶ LAUNCH ENGINE</span>
+    </div>
+</div>
+<div class="module-card" data-module="observatory">
+    <div class="card-bg" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/HST-SM4.jpeg/800px-HST-SM4.jpeg');"></div>
+    <div class="card-content">
+        <span class="module-tag" style="color: #aaffcc; border-color: #aaffcc;">MODULE 08</span>
+        <h3>OBSERVATORY HISTORY</h3>
+        <p>갈릴레오부터 JWST까지 인류의 우주 관측 기술 발전과 전자기파 스펙트럼의 확장을 탐구합니다.</p>
+        <span class="launch-text">▶ LAUNCH ENGINE</span>
+    </div>
+</div>
 
-    <!-- 우측 상단: 선택된 위성 상세 정보 (Target Telemetry) -->
-    <div class="hud-panel right-panel" id="telemetry-panel" style="display: none;">
-        <h2 style="color: var(--color-status-green);">TARGET LOCKED</h2>
+<div id="ui-stellar" class="module-ui" style="display: none;">
+    <div class="hud-panel left-hud">
+        <h2 style="color: #ff9944;">STELLAR LIFECYCLE</h2>
+        <p class="hud-desc">항성의 초기 질량을 설정하고 타임라인을 조작하여 별의 일생을 시뮬레이션하세요.</p>
+        <div class="control-group" style="margin-top: 20px;">
+            <label style="color: #ff9944;">INITIAL MASS (초기 질량 : M☉)</label>
+            <input type="range" id="sl-mass" min="0.1" max="100" value="1" step="0.1" style="accent-color:#ff9944;">
+            <span id="sl-mass-val" class="mono-data">1.0 M☉ (<span id="sl-class-label">Sun-like Star</span>)</span>
+        </div>
+        <div class="control-group" style="margin-top: 20px;">
+            <label style="color: #ff9944;">EVOLUTION TIMELINE (진화 단계)</label>
+            <input type="range" id="sl-time" min="0" max="100" value="0" step="1" style="accent-color:#ff9944;">
+            <span id="sl-stage-val" class="mono-data">Nebula Phase</span>
+        </div>
+        <div class="telemetry-box" style="margin-top:20px; border:1px solid rgba(255, 153, 68, 0.3); background: rgba(255, 153, 68, 0.05); padding:15px; border-radius: 4px;">
+            <div class="telemetry-row"><span>FINAL FATE (최후)</span><span id="sl-fate" class="mono-data" style="color: #fff;">White Dwarf</span></div>
+        </div>
+    </div>
+    <div class="hud-panel right-hud" style="width: 540px;">
+        <h2 style="color: #ff9944; font-size: 18px;">HERTZSPRUNG-RUSSELL DIAGRAM</h2>
+        <div id="sl-hr-diagram" style="width: 100%; height: 350px; margin-top: 15px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.5); border-radius: 4px;"></div>
+        <div class="data-grid" style="margin-top: 15px; border-left-color: #ff9944;">
+            <div class="data-cell"><span>SURFACE TEMP</span><span id="sl-temp" class="mono-data" style="color:#ffaa00;">-- K</span></div>
+            <div class="data-cell"><span>LUMINOSITY</span><span id="sl-lum" class="mono-data">-- L☉</span></div>
+            <div class="data-cell"><span>RADIUS</span><span id="sl-rad" class="mono-data">-- R☉</span></div>
+        </div>
+    </div>
+</div>
+
+<div id="ui-exoplanet" class="module-ui" style="display: none;">
+    <div class="hud-panel left-hud">
+        <h2 style="color: #64ffda;">EXOPLANET SYSTEMS</h2>
+        <p class="hud-desc">외계 행성계를 선택하고 생명체 거주 가능 구역(Habitable Zone)을 분석하세요.</p>
+        <div id="ep-system-list" class="target-list"></div>
+        <h3 class="section-title" style="color: #64ffda; border-bottom-color: #64ffda; margin-top: 30px;">TRANSIT LIGHT CURVE (천체면 통과 광도 곡선)</h3>
+        <p class="hud-desc" style="font-size: 10px; margin-bottom: 10px;">선택된 행성이 항성 앞을 지날 때 발생하는 미세한 광도 감소를 실시간으로 추적합니다.</p>
+        <div id="ep-light-curve" style="width: 100%; height: 120px; background: rgba(0,0,0,0.5); border: 1px solid rgba(100, 255, 218, 0.3); border-radius: 4px;"></div>
+    </div>
+    <div class="hud-panel right-hud" style="width: 440px;">
+        <h2 id="ep-planet-name" style="color: #64ffda; font-size: 22px;">--</h2>
+        <p id="ep-planet-desc" class="hud-desc" style="margin-top: 10px; font-weight:bold; color: #fff;">--</p>
+        <div class="data-grid" style="margin-top: 15px; border-left-color: #64ffda;">
+            <div class="data-cell"><span>ORBITAL PERIOD</span><span id="ep-period" class="mono-data">-- Days</span></div>
+            <div class="data-cell"><span>PLANET RADIUS</span><span id="ep-radius" class="mono-data" style="color:#64ffda;">-- R⊕</span></div>
+            <div class="data-cell"><span>MASS</span><span id="ep-mass" class="mono-data">-- M⊕</span></div>
+            <div class="data-cell"><span>DISCOVERY YEAR</span><span id="ep-year" class="mono-data">--</span></div>
+        </div>
+        <h3 class="section-title" style="color: #64ffda; border-bottom-color: #64ffda; margin-top: 20px;">EARTH SIMILARITY INDEX (ESI 비교)</h3>
+        <div id="ep-esi-chart" style="width: 100%; height: 180px; margin-top: 10px;"></div>
+    </div>
+</div>
+
+<div id="ui-collision" class="module-ui" style="display: none;">
+    <div class="hud-panel left-hud">
+        <h2 style="color: #ff66aa;">COSMIC COLLISION</h2>
+        <p class="hud-desc">우리은하와 안드로메다 은하의 병합 시나리오를 시뮬레이션합니다.</p>
+        <div class="control-group" style="margin-top: 20px;">
+            <label style="color: #ff66aa;">COLLISION TIMELINE</label>
+            <input type="range" id="cc-time" min="0" max="100" value="0" step="1" style="accent-color:#ff66aa;">
+            <span id="cc-stage-val" class="mono-data" style="color: #fff; display: block; margin-top: 10px; font-size: 14px;">T-4.5 Gyr: Approach</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 30px;">
+            <button id="btn-cc-dm" class="theme-btn" style="border-color: #ff66aa;">TOGGLE DARK MATTER HALO</button>
+            <button id="btn-cc-tidal" class="theme-btn" style="border-color: #ff66aa;">HIGHLIGHT TIDAL STREAMS</button>
+        </div>
+    </div>
+    <div class="hud-panel right-hud">
+        <h2 style="color: #ff66aa; font-size: 20px;">STAGE ANALYSIS</h2>
+        <p id="cc-desc" class="hud-desc" style="margin-top: 15px; color: #fff; line-height: 1.6;">두 은하가 서로의 중력에 이끌려 서서히 접근하고 있습니다.</p>
+        <div class="telemetry-box" style="margin-top:20px; border:1px solid rgba(255, 102, 170, 0.3); background: rgba(255, 102, 170, 0.05); padding:15px; border-radius: 4px;">
+            <div class="telemetry-row"><span>CORE SEPARATION</span><span id="cc-sep" class="mono-data" style="color: #fff;">2.5 Mly</span></div>
+            <div class="telemetry-row"><span>RELATIVE VELOCITY</span><span id="cc-vel" class="mono-data" style="color: #ff66aa;">110 km/s</span></div>
+            <div class="telemetry-row"><span>MERGER PROBABILITY</span><span class="mono-data" style="color: #00ffcc;">99.9%</span></div>
+        </div>
+    </div>
+</div>
+
+<div id="ui-observatory" class="module-ui" style="display: none;">
+    <div class="hud-panel left-hud" style="width: 400px;">
+        <h2 style="color: #aaffcc;">OBSERVATORY HISTORY</h2>
+        <p class="hud-desc">인류의 우주 관측 기술 발전사를 시대별로 탐구합니다.</p>
+        <div style="display: flex; gap: 5px; margin-top: 15px; flex-wrap: wrap;" id="obs-filters">
+            </div>
+        <div id="obs-timeline" style="margin-top: 25px; border-left: 2px solid rgba(170, 255, 204, 0.3); padding-left: 15px; display: flex; flex-direction: column; gap: 15px; max-height: 400px; overflow-y: auto;">
+            </div>
+    </div>
+    <div class="hud-panel right-hud" style="width: 460px;">
+        <h2 id="obs-name" style="color: #aaffcc; font-size: 22px;">--</h2>
+        <div id="obs-media" class="media-box" style="height: 160px; border-color: #aaffcc;"></div>
+        <p id="obs-desc" class="hud-desc" style="margin-top: 15px; color: #fff; line-height: 1.6;">--</p>
         
-        <div class="telemetry-box">
-            <h3 id="sat-name" style="margin-bottom: 15px; color: #fff;">STARLINK-XXXX</h3>
-            
-            <div class="tele-row">
-                <span>NORAD ID</span>
-                <span id="sat-id" class="mono-data">--</span>
-            </div>
-            <div class="tele-row">
-                <span>ALTITUDE</span>
-                <span id="sat-alt" class="mono-data">-- km</span>
-            </div>
-            <div class="tele-row">
-                <span>VELOCITY</span>
-                <span id="sat-vel" class="mono-data">-- km/s</span>
-            </div>
-            <div class="tele-row">
-                <span>COORDINATES</span>
-                <span id="sat-coords" class="mono-data">--.--°, --.--°</span>
-            </div>
+        <h3 class="section-title" style="color: #aaffcc; border-bottom-color: #aaffcc; margin-top: 20px;">ELECTROMAGNETIC SPECTRUM</h3>
+        <div id="obs-spectrum" style="width: 100%; height: 40px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); position: relative; overflow: hidden;"></div>
+        
+        <div class="data-grid" style="margin-top: 20px; border-left-color: #aaffcc;">
+            <div class="data-cell"><span>LOCATION</span><span id="obs-loc" class="mono-data">--</span></div>
+            <div class="data-cell"><span>APERTURE</span><span id="obs-aperture" class="mono-data" style="color:#aaffcc;">--</span></div>
+            <div class="data-cell" style="grid-column: span 2;"><span>KEY DISCOVERY</span><span id="obs-discovery" class="mono-data" style="font-size: 11px; white-space: normal;">--</span></div>
         </div>
-
-        <button id="btn-clear" class="theme-btn" style="width: 100%; margin-top: 15px;">DESELECT (궤적 지우기)</button>
     </div>
-
-    <!-- 하단 상태바 -->
-    <div class="bottom-status">
-        <span class="status-dot"></span> <span id="status-text">INITIALIZING GLOBAL SCAN...</span>
-    </div>
-
-    <script src="script.js"></script>
-</body>
-</html>
+</div>
