@@ -3,17 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAFS Grand Observatory V16.1 (Absolute Edition)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <title>HAFS Grand Observatory</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 </head>
-<body class="dark-mode">
+<body>
+
+    <!-- MODULE LOADER -->
+    <div id="module-loader" class="module-loader" style="display: none;">
+        <div class="loader-content">
+            <div class="loader-orbit">
+                <div class="loader-dot"></div>
+            </div>
+            <p class="loader-title">INITIALIZING</p>
+            <p id="loader-text" class="loader-subtitle">Loading Module...</p>
+            <div class="loader-bar-bg">
+                <div id="loader-bar-fill" class="loader-bar-fill"></div>
+            </div>
+        </div>
+    </div>
 
     <div id="three-canvas" class="fullscreen-viz"></div>
 
+    <!-- HEADER -->
     <header class="global-header">
         <div class="header-container">
             <div class="header-left">
@@ -27,216 +43,207 @@
                 <h1>GRAND OBSERVATORY</h1>
                 <p>Advanced Macro-to-Micro Astrophysics Platform</p>
             </div>
-            <button id="btn-return-hub" class="theme-btn" style="display: none; border-color: var(--color-accent-gold);">◀ RETURN TO MAIN HUB</button>
+            <button id="btn-return-hub" class="theme-btn" style="display: none;">← Return to Hub</button>
         </div>
     </header>
 
+    <!-- LOBBY -->
     <div id="ui-lobby" class="lobby-container">
         <div class="welcome-text">
-            <h2>SELECT EXPLORATION MODULE</h2>
+            <h2>Select Exploration Module</h2>
             <p>탐구할 우주 스케일을 선택하세요.</p>
         </div>
-        <div class="module-cards" style="display: flex; flex-wrap: wrap; justify-content: center; max-width: 1200px;">
+        <div class="module-cards">
             <div class="module-card" data-module="deepspace">
                 <div class="card-bg" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/4f/Black_hole_-_Messier_87_crop_max_res.jpg');"></div>
                 <div class="card-content">
-                    <span class="module-tag" style="color: #ff3366; border-color: #ff3366;">MODULE 01</span>
-                    <h3>DEEP SPACE & BLACK HOLE</h3>
-                    <p>우리은하의 나선팔 구조와 도플러 빔 효과가 적용된 블랙홀 시공간을 탐구합니다.</p>
+                    <span class="module-tag" style="color: #ff453a; border-color: #ff453a;">MODULE 01</span>
+                    <h3>Deep Space & Black Hole</h3>
+                    <p>우리은하의 나선팔 구조와 블랙홀 시공간을 탐구합니다.</p>
                 </div>
             </div>
             <div class="module-card" data-module="solarsystem">
                 <div class="card-bg" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/e2/Jupiter.jpg');"></div>
                 <div class="card-content">
-                    <span class="module-tag" style="color: #64ffda; border-color: #64ffda;">MODULE 02</span>
-                    <h3>SOLAR SYSTEM & MOONS</h3>
-                    <p>8개 행성과 13개 위성의 궤도, 대기 성분 및 내부 구조를 심층 분석합니다.</p>
+                    <span class="module-tag" style="color: #30d158; border-color: #30d158;">MODULE 02</span>
+                    <h3>Solar System & Moons</h3>
+                    <p>8개 행성과 위성의 궤도, 대기 성분 및 내부 구조를 분석합니다.</p>
                 </div>
             </div>
             <div class="module-card" data-module="probes">
-                <div class="card-bg" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/6/60/Voyager_spacecraft_model.png'); background-size: contain; background-repeat: no-repeat; background-color: #000;"></div>
+                <div class="card-bg" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Voyager_1_and_2_path.svg/1280px-Voyager_1_and_2_path.svg.png'); background-size: contain; background-color: #050508; background-repeat: no-repeat; background-position: center;"></div>
                 <div class="card-content">
-                    <span class="module-tag" style="color: #a277ff; border-color: #a277ff;">MODULE 03</span>
-                    <h3>INTERSTELLAR PROBES</h3>
-                    <p>태양계를 벗어나 항해 중인 7기의 위대한 탐사선들의 실시간 텔레메트리를 추적합니다.</p>
+                    <span class="module-tag" style="color: #bf5af2; border-color: #bf5af2;">MODULE 03</span>
+                    <h3>Interstellar Probes</h3>
+                    <p>태양계를 벗어나 항해 중인 탐사선들의 텔레메트리를 추적합니다.</p>
                 </div>
             </div>
             <div class="module-card" data-module="genesis">
-                <div class="card-bg" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/6/6f/CMB_Timeline300_no_WMAP.jpg');"></div>
+                <div class="card-bg" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/3/3c/Ilc_9yr_moll4096.png');"></div>
                 <div class="card-content">
-                    <span class="module-tag" style="color: #ffaa00; border-color: #ffaa00;">MODULE 04</span>
-                    <h3>GENESIS ENGINE (BIG BANG)</h3>
-                    <p>빅뱅부터 우주 배경 복사, 코스믹 웹(Cosmic Web) 형성까지의 우주 진화 과정을 시뮬레이션합니다.</p>
-                </div>
-            </div>
-            <div class="module-card" data-module="stellar">
-                <div class="card-bg" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/6/6b/Eta_Carinae_Nebula_1.jpg');"></div>
-                <div class="card-content">
-                    <span class="module-tag" style="color: #ff9944; border-color: #ff9944;">MODULE 05</span>
-                    <h3>STELLAR LIFECYCLE</h3>
-                    <p>항성의 초기 질량에 따른 탄생부터 죽음까지의 진화 과정을 HR도(H-R Diagram)와 함께 시뮬레이션합니다.</p>
+                    <span class="module-tag" style="color: #ff9f0a; border-color: #ff9f0a;">MODULE 04</span>
+                    <h3>Genesis Engine (Big Bang)</h3>
+                    <p>빅뱅부터 코스믹 웹 형성까지 우주 진화 과정을 시뮬레이션합니다.</p>
                 </div>
             </div>
         </div>
         <div class="lobby-footer">DEVELOPED & DESIGNED BY 10621 이정욱</div>
     </div>
 
+    <!-- DEEP SPACE UI -->
     <div id="ui-deepspace" class="module-ui" style="display: none;">
         <div class="hud-panel left-hud">
-            <h2>UNIVERSE MAP</h2>
+            <h2>Universe Map</h2>
             <div class="target-list">
-                <button class="target-btn active ds-target" data-target="home"><span class="btn-title">MILKY WAY (우리은하)</span></button>
-                <button class="target-btn ds-target" data-target="sgra" style="border-left-color: #ff3366;"><span class="btn-title" style="color: #ff3366;">SAGITTARIUS A* (블랙홀)</span></button>
-                <button class="target-btn ds-target" data-target="carina"><span class="btn-title">CARINA NEBULA (용골자리)</span></button>
-                <button class="target-btn ds-target" data-target="smacs"><span class="btn-title">SMACS 0723 (은하단)</span></button>
+                <button class="target-btn active ds-target" data-target="home">
+                    <span class="btn-title">Milky Way (우리은하)</span>
+                </button>
+                <button class="target-btn ds-target" data-target="sgra" style="color: #ff453a;">
+                    <span class="btn-title" style="color: #ff453a;">Sagittarius A* (블랙홀)</span>
+                </button>
+                <button class="target-btn ds-target" data-target="carina">
+                    <span class="btn-title">Carina Nebula (용골자리)</span>
+                </button>
+                <button class="target-btn ds-target" data-target="smacs">
+                    <span class="btn-title">SMACS 0723 (은하단)</span>
+                </button>
             </div>
         </div>
         <div class="hud-panel right-hud" id="ds-info" style="opacity: 0;">
-            <h2 id="ds-title" style="color: var(--color-accent-gold); font-size:22px;">TARGET</h2>
-            <div id="ds-media" class="media-box" style="height: 120px; background-size: cover; border-color: var(--color-accent-gold);"></div>
-            <p id="ds-desc" class="hud-desc" style="margin-bottom: 10px; margin-top: 10px; font-weight: bold;">--</p>
+            <h2 id="ds-title" style="color: var(--color-accent-gold); font-size:18px;">TARGET</h2>
+            <div id="ds-media" class="media-box" style="height: 140px; border-color: rgba(212,175,55,0.3);"></div>
+            <p id="ds-desc" class="hud-desc" style="margin-bottom: 10px; margin-top: 10px; color: var(--color-text-primary);">--</p>
             <div id="ds-details" class="detail-box">--</div>
             <div id="ds-normal-info">
-                <h3 class="section-title">ASTRO-METRICS (질량 분포 분석)</h3>
+                <h3 class="section-title">ASTRO-METRICS</h3>
                 <div id="ds-metrics-bar" class="comp-bar"></div>
                 <div id="ds-metrics-legend" class="comp-legend" style="margin-bottom: 20px;"></div>
-                <h3 class="section-title">SUB-SYSTEMS (주요 구조)</h3><ul id="ds-sub-list" class="sub-list"></ul>
+                <h3 class="section-title">SUB-SYSTEMS</h3>
+                <ul id="ds-sub-list" class="sub-list"></ul>
             </div>
             <div id="ds-bh-controls" style="display: none;">
-                <h3 class="section-title" style="color: #ff3366; border-color: #ff3366;">RELATIVISTIC PHYSICS ENGINE</h3>
-                <div class="control-group"><label>블랙홀 질량 (Solar Mass)</label><input type="range" id="bh-mass" min="1" max="50" value="10" step="0.1" style="accent-color:#ff3366;"><span id="bh-mass-val" class="mono-data">10.0</span></div>
-                <div class="control-group" style="margin-top:10px;"><label>관측자 거리 (Time Dilation 측정)</label><input type="range" id="bh-dist" min="50" max="300" value="150" step="1" style="accent-color:#ff3366;"><span id="bh-dist-val" class="mono-data">150 Rs</span></div>
-                <div class="telemetry-box" style="margin-top:15px; border:1px solid rgba(255, 51, 102, 0.4); background: rgba(255, 51, 102, 0.1); padding:15px;">
-                    <div class="telemetry-row"><span>SCHWARZSCHILD RADIUS</span><span id="bh-rs" class="mono-data" style="color: #fff;">--</span></div>
-                    <div class="telemetry-row"><span>TIME DILATION (γ)</span><span id="bh-time" class="mono-data" style="color: #ff3366; font-size: 14px;">--</span></div>
+                <h3 class="section-title" style="color: #ff453a; border-color: #ff453a;">RELATIVISTIC PHYSICS ENGINE</h3>
+                <div class="control-group">
+                    <label>블랙홀 질량 (Solar Mass)</label>
+                    <input type="range" id="bh-mass" min="1" max="50" value="10" step="0.1" style="accent-color:#ff453a;">
+                    <span id="bh-mass-val" class="mono-data">10.0</span>
+                </div>
+                <div class="control-group" style="margin-top:10px;">
+                    <label>관측자 거리 (Time Dilation)</label>
+                    <input type="range" id="bh-dist" min="50" max="300" value="150" step="1" style="accent-color:#ff453a;">
+                    <span id="bh-dist-val" class="mono-data">150 Rs</span>
+                </div>
+                <div class="telemetry-box" style="margin-top:15px; border:0.5px solid rgba(255,69,58,0.3); background: rgba(255,69,58,0.06); padding:14px; border-radius:10px;">
+                    <div class="telemetry-row"><span>SCHWARZSCHILD RADIUS</span><span id="bh-rs" class="mono-data" style="color:#fff;">--</span></div>
+                    <div class="telemetry-row"><span>TIME DILATION (γ)</span><span id="bh-time" class="mono-data" style="color: #ff453a; font-size: 13px;">--</span></div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- SOLAR SYSTEM UI -->
     <div id="ui-solarsystem" class="module-ui" style="display: none;">
         <div class="hud-panel left-hud">
-            <h2>PLANETARY TARGETS</h2>
+            <h2>Planetary Targets</h2>
             <div id="ss-planet-list" class="planet-list"></div>
-            <div class="control-group" style="margin-top: 20px;"><label>시뮬레이션 배속 (Orbit Speed)</label><input type="range" id="ss-speed" min="0" max="50" value="10"><span id="ss-speed-val" class="mono-data">10x</span></div>
-            <button id="btn-ss-reset" class="theme-btn" style="width: 100%; margin-top: 15px;">전체 조감도로 복귀</button>
+            <div class="control-group" style="margin-top: 18px;">
+                <label>Simulation Speed</label>
+                <input type="range" id="ss-speed" min="0" max="50" value="10">
+                <span id="ss-speed-val" class="mono-data">10x</span>
+            </div>
+            <button id="btn-ss-reset" class="theme-btn" style="width: 100%; margin-top: 14px;">전체 조감도</button>
         </div>
         <div class="hud-panel right-hud" id="ss-info" style="opacity: 0;">
-            <h2 id="ss-name" style="color: #64ffda; font-size:24px;">PLANET</h2>
+            <h2 id="ss-name" style="color: #30d158; font-size:20px;">PLANET</h2>
             <div id="ss-media" class="media-box"></div>
-            <p id="ss-desc" class="hud-desc" style="margin-top: 15px; font-weight:bold;">--</p>
+            <p id="ss-desc" class="hud-desc" style="margin-top: 12px; color: var(--color-text-primary);">--</p>
             <div id="ss-details" class="detail-box">--</div>
-            
-            <div class="data-grid" id="ss-planet-data" style="margin-top: 15px;">
-                <div class="data-cell"><span>SURFACE TEMP</span><span id="ss-temp" class="mono-data" style="color:#ffaa00;">--</span></div>
+            <div class="data-grid" id="ss-planet-data" style="margin-top: 14px;">
+                <div class="data-cell"><span>SURFACE TEMP</span><span id="ss-temp" class="mono-data" style="color:#ff9f0a;">--</span></div>
                 <div class="data-cell"><span>ORBIT SPEED</span><span id="ss-orb" class="mono-data">-- km/s</span></div>
             </div>
-
-            <div class="data-grid" id="ss-moon-data" style="display:none; border-left-color: #a277ff;">
-                <div class="data-cell"><span>ORBITAL PERIOD</span><span id="ss-moon-period" class="mono-data" style="color:#a277ff;">--</span></div>
+            <div class="data-grid" id="ss-moon-data" style="display:none;">
+                <div class="data-cell"><span>ORBITAL PERIOD</span><span id="ss-moon-period" class="mono-data" style="color:#bf5af2;">--</span></div>
                 <div class="data-cell"><span>SURFACE GRAVITY</span><span id="ss-moon-grav" class="mono-data">--</span></div>
             </div>
-
             <div id="ss-comp-container">
-                <h3 class="section-title">ATMOSPHERE COMPOSITION</h3><div id="ss-comp-bar" class="comp-bar"></div><div id="ss-comp-legend" class="comp-legend"></div>
-                <h3 class="section-title" style="margin-top: 15px;">INTERNAL STRUCTURE</h3><div id="ss-internal-bar" class="internal-bar"></div><div id="ss-internal-legend" class="comp-legend"></div>
+                <h3 class="section-title">ATMOSPHERE COMPOSITION</h3>
+                <div id="ss-comp-bar" class="comp-bar"></div>
+                <div id="ss-comp-legend" class="comp-legend"></div>
+                <h3 class="section-title" style="margin-top:14px;">INTERNAL STRUCTURE</h3>
+                <div id="ss-internal-bar" class="internal-bar"></div>
+                <div id="ss-internal-legend" class="comp-legend"></div>
             </div>
-            <div id="ss-moons-container" style="display:none;"><h3 class="section-title" style="margin-top: 20px;">NATURAL SATELLITES</h3><div id="ss-moons-list" class="moon-list"></div></div>
+            <div id="ss-moons-container" style="display:none;">
+                <h3 class="section-title" style="margin-top:18px;">NATURAL SATELLITES</h3>
+                <div id="ss-moons-list" class="moon-list"></div>
+            </div>
         </div>
     </div>
 
+    <!-- PROBES UI -->
     <div id="ui-probes" class="module-ui" style="display: none;">
         <div class="hud-panel left-hud">
-            <h2 style="color: #a277ff;">INTERSTELLAR PROBES</h2>
-            <p class="hud-desc">심우주를 항해 중인 탐사선을 추적합니다. (태양 중심 AU 좌표계)</p>
+            <h2 style="color: #bf5af2;">Interstellar Probes</h2>
+            <p class="hud-desc">심우주를 항해 중인 탐사선을 추적합니다.</p>
             <div id="pr-list" class="planet-list"></div>
-            <button id="btn-pr-reset" class="theme-btn" style="width: 100%; margin-top: 15px; border-color: #a277ff;">태양계 외곽 조감도</button>
+            <button id="btn-pr-reset" class="theme-btn" style="width: 100%; margin-top: 14px;">태양계 외곽 조감도</button>
         </div>
         <div class="hud-panel right-hud" id="pr-info" style="opacity: 0;">
-            <h2 id="pr-name" style="color: #a277ff; font-size:24px;">PROBE</h2>
-            <div id="pr-media" class="media-box" style="height: 140px; background-size: contain; background-repeat: no-repeat; background-position: center; background-color: #050505;"></div>
-            <div class="data-grid" style="margin-top: 15px; border-left-color: #a277ff;">
+            <h2 id="pr-name" style="color: #bf5af2; font-size:20px;">PROBE</h2>
+            <div id="pr-media" class="media-box" style="height: 160px;"></div>
+            <div class="data-grid" style="margin-top: 14px;">
                 <div class="data-cell"><span>LAUNCH YEAR</span><span id="pr-launch" class="mono-data" style="color:#fff;">--</span></div>
-                <div class="data-cell"><span>PRIMARY TARGET</span><span id="pr-target" class="mono-data" style="color:#a277ff;">--</span></div>
+                <div class="data-cell"><span>PRIMARY TARGET</span><span id="pr-target" class="mono-data" style="color:#bf5af2;">--</span></div>
             </div>
-            <p id="pr-desc" class="hud-desc" style="margin-top: 15px; font-weight:bold;">--</p>
-            <div id="pr-details" class="detail-box" style="border-left-color: #a277ff;">--</div>
-            <h3 class="section-title" style="color: #a277ff; border-bottom-color: #a277ff;">RTG POWER STATUS</h3>
-            <div class="internal-bar" style="border-color: #444; height: 14px; flex-direction: row; background: rgba(0,0,0,0.5);"><div id="pr-power-bar" class="internal-segment" style="background:#a277ff; height:100%; width: 0%; justify-content: flex-start; padding-left: 10px;">0%</div></div>
-            <h3 class="section-title" style="color: #a277ff; border-bottom-color: #a277ff; margin-top: 20px;">LIVE TELEMETRY</h3>
-            <div class="telemetry-box" style="background: rgba(162, 119, 255, 0.05); border: 1px solid rgba(162, 119, 255, 0.2); padding: 15px; border-radius: 4px;">
-                <div class="telemetry-row"><span>DISTANCE FROM SUN (AU)</span><span id="pr-dist" class="mono-data" style="color: #fff; font-size: 13px;">-- AU</span></div>
+            <p id="pr-desc" class="hud-desc" style="margin-top: 12px; color: var(--color-text-primary);">--</p>
+            <div id="pr-details" class="detail-box" style="border-color: rgba(191,90,242,0.2);">--</div>
+            <h3 class="section-title" style="color: #bf5af2; border-color: rgba(191,90,242,0.3);">RTG POWER STATUS</h3>
+            <div style="background: rgba(255,255,255,0.05); border-radius: 2px; height: 4px; overflow: hidden;">
+                <div id="pr-power-bar" style="background:#bf5af2; height:100%; width:0%; transition: width 0.6s ease;"></div>
+            </div>
+            <h3 class="section-title" style="color: #bf5af2; border-color: rgba(191,90,242,0.3); margin-top: 18px;">LIVE TELEMETRY</h3>
+            <div class="telemetry-box" style="background: rgba(191,90,242,0.05); border: 0.5px solid rgba(191,90,242,0.2); padding: 14px; border-radius: 10px;">
+                <div class="telemetry-row"><span>DISTANCE FROM SUN (AU)</span><span id="pr-dist" class="mono-data" style="color:#fff; font-size:13px;">-- AU</span></div>
                 <div class="telemetry-row"><span>CURRENT VELOCITY</span><span id="pr-vel" class="mono-data">-- km/s</span></div>
-                <div class="telemetry-row"><span>LIGHT-TIME DELAY (통신)</span><span id="pr-delay" class="mono-data" style="color: #ffaa00;">--</span></div>
+                <div class="telemetry-row"><span>LIGHT-TIME DELAY</span><span id="pr-delay" class="mono-data" style="color: #ff9f0a;">--</span></div>
             </div>
         </div>
     </div>
 
+    <!-- GENESIS UI -->
     <div id="ui-genesis" class="module-ui" style="display: none;">
-        <div class="hud-panel left-hud" style="width: 420px;">
-            <h2 style="color: #ffaa00;">GENESIS ENGINE</h2>
-            <p class="hud-desc">타임라인 슬라이더를 조작하여 빅뱅부터 우주 거대 구조 형성까지의 진화를 시뮬레이션하세요.</p>
-            <div class="control-group" style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
-                <label style="color: #ffaa00; font-size: 14px; margin-bottom: 15px;">COSMIC TIMELINE (우주 나이)</label>
-                <input type="range" id="gn-timeline" min="0" max="100" value="0" step="0.1" style="accent-color:#ffaa00; height: 4px;">
-                <div style="display: flex; justify-content: space-between; margin-top: 10px; font-family: var(--font-data); font-size: 9px; color: #888;">
-                    <span>BIG BANG</span>
-                    <span>PRESENT (13.8B Yrs)</span>
+        <div class="hud-panel left-hud" style="width: 380px;">
+            <h2 style="color: #ff9f0a;">Genesis Engine</h2>
+            <p class="hud-desc">슬라이더를 조작하여 빅뱅부터 우주 거대 구조 형성까지 시뮬레이션하세요.</p>
+            <div class="control-group" style="margin-top: 24px; border-top: 0.5px solid var(--color-border); padding-top: 18px;">
+                <label style="color: #ff9f0a; font-size: 11px; margin-bottom: 12px; display:block;">COSMIC TIMELINE</label>
+                <input type="range" id="gn-timeline" min="0" max="100" value="0" step="0.1" style="accent-color:#ff9f0a; height: 3px;">
+                <div style="display:flex; justify-content:space-between; margin-top:8px; font-family:var(--font-mono); font-size:9px; color:var(--color-text-secondary);">
+                    <span>BIG BANG</span><span>13.8B Years</span>
                 </div>
             </div>
-            <h3 class="section-title" style="color: #ffaa00; border-bottom-color: #ffaa00; margin-top: 30px;">COSMOLOGICAL METRICS</h3>
-            <div class="telemetry-box" style="background: rgba(255, 170, 0, 0.05); border: 1px solid rgba(255, 170, 0, 0.3); padding: 15px; border-radius: 4px;">
-                <div class="telemetry-row"><span>COSMIC EPOCH (시대)</span><span id="gn-epoch" class="mono-data" style="color: #fff; font-size: 14px;">SINGULARITY</span></div>
-                <div class="telemetry-row"><span>ESTIMATED AGE</span><span id="gn-age" class="mono-data" style="color: #ffaa00;">0 Years</span></div>
-                <div class="telemetry-row"><span>AVERAGE TEMP</span><span id="gn-temp" class="mono-data" style="color: #ff5555;">∞ K</span></div>
-                <div class="telemetry-row" style="border-top: 1px dashed rgba(255,170,0,0.3); padding-top:10px; margin-top:5px;"><span>UNIVERSE SIZE</span><span id="gn-size" class="mono-data" style="color: #64ffda;">--</span></div>
-                <div class="telemetry-row"><span>DOMINANT FORCE/COMP.</span><span id="gn-comp" class="mono-data" style="color: #a277ff;">--</span></div>
-                <div class="telemetry-row"><span>COSMIC REDSHIFT (z)</span><span id="gn-redshift" class="mono-data" style="color: #fff;">--</span></div>
-            </div>
-        </div>
-        <div class="hud-panel right-hud" style="bottom: auto; top: 130px; width: 440px; right: 50px;">
-            <h2 style="color: #ffaa00; font-size: 20px;">EPOCH ANALYSIS</h2>
-            <div id="gn-media" class="media-box" style="height: 180px; background-size: cover; border-color: #ffaa00;"></div>
-            <p id="gn-desc" class="hud-desc" style="margin-top: 15px; font-weight:bold; color: #fff; line-height: 1.6;">--</p>
-            <div id="gn-details" class="detail-box" style="border-left-color: #ffaa00; margin-top: 10px;">--</div>
-        </div>
-    </div>
-
-    <div id="ui-stellar" class="module-ui" style="display: none;">
-        <div class="hud-panel left-hud" style="width: 400px;">
-            <h2 style="color: #ff9944;">STELLAR LIFECYCLE</h2>
-            <p class="hud-desc">항성의 초기 질량을 설정하고 타임라인을 조작하여 별의 일생을 시뮬레이션하세요.</p>
-            <div class="control-group" style="margin-top: 30px;">
-                <label style="color: #ff9944; font-size: 12px; margin-bottom: 10px;">INITIAL MASS (초기 질량 : M☉)</label>
-                <input type="range" id="sl-mass" min="0.1" max="50" value="1" step="0.1" style="accent-color:#ff9944; height: 4px;">
-                <span id="sl-mass-val" class="mono-data" style="color: #fff; font-size: 14px; display: block; margin-top: 8px;">1.0 M☉ (<span id="sl-class-label" style="color:#ffaa00;">Sun-like Star</span>)</span>
-            </div>
-            <div class="control-group" style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
-                <label style="color: #ff9944; font-size: 12px; margin-bottom: 10px;">EVOLUTION TIMELINE (진화 단계)</label>
-                <input type="range" id="sl-time" min="0" max="100" value="0" step="0.5" style="accent-color:#ff9944; height: 4px;">
-                <div style="display: flex; justify-content: space-between; margin-top: 10px; font-family: var(--font-data); font-size: 9px; color: #888;">
-                    <span>NEBULA</span>
-                    <span>MAIN SEQUENCE</span>
-                    <span>REMNANT</span>
+            <h3 class="section-title" style="color:#ff9f0a; border-color:rgba(255,159,10,0.3);">COSMOLOGICAL METRICS</h3>
+            <div class="telemetry-box" style="background:rgba(255,159,10,0.05); border:0.5px solid rgba(255,159,10,0.2); padding:14px; border-radius:10px;">
+                <div class="telemetry-row"><span>COSMIC EPOCH</span><span id="gn-epoch" class="mono-data" style="color:#fff; font-size:13px;">SINGULARITY</span></div>
+                <div class="telemetry-row"><span>ESTIMATED AGE</span><span id="gn-age" class="mono-data" style="color:#ff9f0a;">0 Years</span></div>
+                <div class="telemetry-row"><span>AVERAGE TEMP</span><span id="gn-temp" class="mono-data" style="color:#ff453a;">∞ K</span></div>
+                <div class="telemetry-row" style="border-top:0.5px dashed rgba(255,159,10,0.2); padding-top:9px; margin-top:4px;">
+                    <span>UNIVERSE SIZE</span><span id="gn-size" class="mono-data" style="color:#30d158;">--</span>
                 </div>
-                <span id="sl-stage-val" class="mono-data" style="color: #64ffda; display: block; margin-top: 10px; font-size: 14px; text-align: center;">Nebula Phase</span>
-            </div>
-            <button id="btn-sl-reset" class="theme-btn" style="width: 100%; margin-top: 25px; border-color: #ff9944;">전체 조감도로 복귀</button>
-        </div>
-        
-        <div class="hud-panel right-hud" style="bottom: auto; top: 130px; width: 480px; right: 50px;">
-            <h2 style="color: #ff9944; font-size: 20px;">HERTZSPRUNG-RUSSELL DIAGRAM</h2>
-            <p class="hud-desc" style="font-size: 10px; margin-bottom: 15px;">항성의 표면 온도와 광도를 나타내는 천문학의 핵심 도표입니다.</p>
-            <div id="sl-hr-diagram" style="width: 100%; height: 320px; border: 1px solid rgba(255,153,68,0.3); background: rgba(0,0,0,0.6); border-radius: 4px; position: relative;"></div>
-            <h3 class="section-title" style="color: #ff9944; border-bottom-color: #ff9944; margin-top: 25px;">STELLAR TELEMETRY</h3>
-            <div class="telemetry-box" style="background: rgba(255, 153, 68, 0.05); border: 1px solid rgba(255, 153, 68, 0.3); padding: 15px; border-radius: 4px;">
-                <div class="telemetry-row"><span>SURFACE TEMP (온도)</span><span id="sl-temp" class="mono-data" style="color: #ffaa00;">-- K</span></div>
-                <div class="telemetry-row"><span>LUMINOSITY (광도)</span><span id="sl-lum" class="mono-data" style="color: #fff;">-- L☉</span></div>
-                <div class="telemetry-row"><span>RADIUS (반지름)</span><span id="sl-rad" class="mono-data" style="color: #64ffda;">-- R☉</span></div>
-                <div class="telemetry-row" style="border-top: 1px dashed rgba(255,153,68,0.3); padding-top:10px; margin-top:5px;">
-                    <span>FINAL FATE (최후)</span><span id="sl-fate" class="mono-data" style="color: #ff3366;">--</span>
+                <div class="telemetry-row">
+                    <span>DOMINANT FORCE</span><span id="gn-comp" class="mono-data" style="color:#bf5af2;">--</span>
+                </div>
+                <div class="telemetry-row">
+                    <span>REDSHIFT (z)</span><span id="gn-redshift" class="mono-data" style="color:#fff;">--</span>
                 </div>
             </div>
+        </div>
+        <div class="hud-panel right-hud" style="top: 80px; width: 400px; right: 24px;">
+            <h2 style="color:#ff9f0a; font-size:17px;">Epoch Analysis</h2>
+            <div id="gn-media" class="media-box" style="height: 180px; border-color: rgba(255,159,10,0.3);"></div>
+            <p id="gn-desc" class="hud-desc" style="margin-top:14px; color:var(--color-text-primary); line-height:1.6;">--</p>
+            <div id="gn-details" class="detail-box" style="border-color:rgba(255,159,10,0.2); margin-top:10px;">--</div>
         </div>
     </div>
 
